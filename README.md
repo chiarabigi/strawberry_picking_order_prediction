@@ -19,7 +19,7 @@ There should also be a folder for the scheduling policy choices:
 
       --rightest
 
-    --raw
+            --raw
     
 One for the plots:
 
