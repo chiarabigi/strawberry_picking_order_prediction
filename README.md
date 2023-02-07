@@ -3,30 +3,30 @@ using GNN
 
 There should also be a folder for the scheduling policy choices:
 
---choices_test
+  --choices_test
   
-  --annotated
+    --annotated
     
-    --processed
+      --processed
     
-    --raw
+      --raw
   
-  --leftest
+    --leftest
     
-    --processed
+      --processed
     
-    --raw
+      --raw
   
-  --rightest
+    --rightest
     
-    --processed
+      --processed
     
-    --raw
+      --raw
     
 One for the plots:
 
---plots
+  --plots
   
-  --plots_picking_success
+    --plots_picking_success
   
-  --plots_scheduling
+    --plots_scheduling
