@@ -3,6 +3,7 @@ import json
 from torch_geometric.data import DataLoader
 import config_picking_success as cfg_p
 from scipy.spatial import distance
+import random
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -42,6 +43,8 @@ def unite_infos(json_annotations_path):
             target = anns[1].index(min(anns[1]))
         elif policy == 'rightest':
             target = rightest(anns[0])
+        elif policy == 'random':
+            target = random.randrange(0, len(anns[0]))
         target_vector[target] = True
         new_anns.append([anns[0], anns[2], target_vector, 0.0])
     json_annotations_path = '/home/chiara/SCHEDULING/GNN/choices_test/{}/raw/gnnann.json'.format(policy)
