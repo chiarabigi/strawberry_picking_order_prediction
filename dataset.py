@@ -4,7 +4,7 @@ import torch
 from torch_geometric.data import Dataset, Data
 from scipy.spatial import distance
 import json
-
+from utils import only_sides
 
 class SchedulingDataset(Dataset):
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
