@@ -78,17 +78,23 @@ def would_not_close_circle(edge_indices):  # will this combination of edges form
     '''
     Works like domino: if I have edge 1-2 and 2-3, my perimeter becomes 1-3
     If at the end I have two different extremities, it means I didn't form a closed line
+    This is the worst written function ever. Computationally, it makes me cry
     '''
     answer = True
+    stop = False
     if len(edge_indices) > 1:
-        perimeter = edge_indices[0]
-        for j in range(len(edge_indices)):  # I check twice... computationally stupid, but once is not enough
-            for i in range(len(edge_indices) - 1):
-                if (edge_indices[i + 1][0] in perimeter) or (edge_indices[i + 1][-1] in perimeter):
-                    perimeter = list(set(perimeter).symmetric_difference(set(edge_indices[i + 1])))
-        if len(perimeter) == 0:
-            answer = False
-
+        while not stop:
+            for j in range(len(edge_indices)):
+                perimeter = edge_indices[j]
+                for h in range(len(edge_indices)):  # I check it twice because I couldn't think of anything best
+                    for i in range(len(edge_indices)):
+                        if edge_indices[i] != edge_indices[j]:
+                            if (edge_indices[i][0] in perimeter) or (edge_indices[i][-1] in perimeter):
+                                perimeter = list(set(perimeter).symmetric_difference(set(edge_indices[i])))
+                    if len(perimeter) == 0:
+                        answer = False
+                        stop = True
+            stop = True
     return answer
 
 
@@ -135,6 +141,8 @@ def only_sides(all_edge_feats, all_edge_indices, box):
                     edge_feats += [all_edge_feats[index], all_edge_feats[index]]
                 all_nodes[lasts[0]][-1] = 1
                 all_nodes[lasts[-1]][-1] = 1
+
+    return edge_feats, edge_indices
 
 
 def highests(list):  # I discovered that torch.sort does a similar thing and better
