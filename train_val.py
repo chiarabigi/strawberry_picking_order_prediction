@@ -257,7 +257,7 @@ def calculate_metrics(y_pred, y_true):
     disp = ConfusionMatrixDisplay(confusion_matrix=confusion_matrix(y_true, y_pred))
     disp.plot()
     if BestModel:
-        plt.savefig(os.path.join('./plots/plots_{}'.format(goal), 'CM{}_{}_{}_{}_L2{}_{}.jpg'.format(Phase, hiddenLayers, cfg.NL, batchSize, weightDecay, SeedNum)))
+        plt.savefig(os.path.join('./plots/{}'.format(goal), 'CM{}_{}_{}_{}_L2{}_{}.jpg'.format(Phase, hiddenLayers, cfg.NL, batchSize, weightDecay, SeedNum)))
 
 
 def draw_curve(current_epoch, cfg):
@@ -279,7 +279,7 @@ def draw_curve(current_epoch, cfg):
                  horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
         ax1.text(0.5, 0.2, 'V' + str(best_vaccuracy),
                  horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
-    fig.savefig(os.path.join('./plots/plots_{}'.format(goal), 'train_{}_{}_{}_L2{}_{}.jpg'.format(cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
+    fig.savefig(os.path.join('./plots/{}'.format(goal), 'train_{}_{}_{}_L2{}_{}.jpg'.format(cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
 
 
 # Main
@@ -318,7 +318,7 @@ for epoch in trange(1, NumEpochs + 1):
         # Track the best performance, and save the model's state
         if val_loss < best_vloss:
             best_vloss = val_loss
-            model_path = 'best_models/best_models_{}/model_{}'.format(goal, timestamp)
+            model_path = 'best_models/{}/model_{}'.format(goal, timestamp)
             torch.save(model.state_dict(), model_path)
             early_stopping_counter = 0
             BestModel = True
