@@ -22,7 +22,7 @@ def train_one_epoch():
     real_scheduling = np.zeros(17)
     tot_nodes = 0.0
     step = 0
-    occ_1 = np.zeros(4)
+    occ_1 = np.zeros(5)
     for i, batch in enumerate(train_loader, 0):
 
         # zero the parameter gradients
@@ -62,7 +62,7 @@ def validation():
     real_vscheduling = np.zeros(17)
     tot_vnodes = 0.0
     step = 0
-    occ_1 = np.zeros(4)
+    occ_1 = np.zeros(5)
 
     for i, vbatch in enumerate(val_loader):
         # vbatch.to(device)
@@ -87,7 +87,7 @@ def validation():
 def test():
     model.eval()
     real_tscheduling = np.zeros(17)
-    occ_1 = np.zeros(4)
+    occ_1 = np.zeros(5)
 
     for i, tbatch in enumerate(test_loader):
         # tbatch.to(device)
