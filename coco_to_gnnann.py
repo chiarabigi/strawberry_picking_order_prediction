@@ -183,4 +183,3 @@ print('together max: ', all_max_bbox)
 print('areas', areas)
 print('boxes', boxes)
 print('avg area', sum(areas) / boxes)
-one = 1

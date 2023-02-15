@@ -182,9 +182,9 @@ for phase in phases:
             'img_ann': ripe_ann,
             'sc_ann': scheduling,
             'occ_ann': occ_ann,
-            'easiness': easiness
+            'easiness': easiness.extend([0] * len(unripe_ann)),
             # 'patches': anns[g]['patches'],
-            # 'unripe': unripe_ann
+            'unripe': unripe_ann
         })
 
         # scheduling that prefers isolated non occluded strawberries

@@ -36,13 +36,13 @@ class SchedulingDataset(Dataset):
             # Read data from `raw_path`.
             box_obj = anns[index]['img_ann']
             sched = anns[index]['sc_ann']
-            sched = sched[:len(box_obj)]
             occ = anns[index]['occ_ann']
+            easiness = anns[index]['easiness']
             #patches = anns[index]['patches']
-            #unripe = anns[index]['unripe']
+            unripe = anns[index]['unripe']
             if len(box_obj) > 1:
                 # Get node features
-                node_feats = self._get_node_features(box_obj, occ)
+                node_feats = self._get_node_features(box_obj, occ, unripe)
                 # Get edge features and adjacency info
                 edge_feats, edge_index = self.knn(box_obj)
                 # Save actual label
@@ -56,7 +56,8 @@ class SchedulingDataset(Dataset):
                 data = Data(x=node_feats,
                             edge_index=edge_index,
                             edge_attr=edge_feats,
-                            y=scheduling,
+                            y=torch.tensor(easiness, dtype=torch.float32, device=device).unsqueeze(1),
+                            scheduling=scheduling,
                             label=label,
                             info=torch.tensor(occ, device=device).unsqueeze(1)
                             )
@@ -71,36 +72,36 @@ class SchedulingDataset(Dataset):
                 idx += 1
 
 
-    def _get_node_features(self, box, occ):
+    def _get_node_features(self, box, occ, unripe):
         """
         This will return a matrix / 2d array of the shape
         [Number of Nodes, Node Feature size]
         """
         all_node_feats = []
-        occlusion_weight = [1, 3, 2, 4]
-        '''
+        occlusion_weight = [4, 2, 3, 1]  # smaller is better 4, 2, 3, 1
+        ''''''
         if len(unripe) > 0:
-            box.extend(unripe)'''
+            box.extend(unripe)
 
         for a in range(len(box)):
-            '''
+            ''''''
             if a < len(box) - len(unripe):
                 rip = 1
             else:
-                rip = -1'''
+                rip = -1
             node_feats = []
             # Feature 0: x
-            node_feats.append(box[a][0]/10)  # normalize: divide by the maximum bbox value of the dataset 3846
+            node_feats.append(box[a][0])
             # Feature 1: y
-            node_feats.append(box[a][1]/10)  # 2443
+            node_feats.append(box[a][1])
             # Feature 2: Width
-            node_feats.append(box[a][2]/10)  # 798
+            node_feats.append(box[a][2])
             # Feature 3: Height
-            node_feats.append(box[a][3]/10)  # 803
+            node_feats.append(box[a][3])
             # Feature 4: Ripeness
-            # node_feats.append(rip)
+            node_feats.append(rip)
             # Feature 5: Occlusion weight
-            node_feats.append(occlusion_weight[occ[a]]/4)
+            node_feats.append(1 / occlusion_weight[occ[a]])
             # Feature 6-86: Image patch
             # node_feats.extend(patches[a])
 
@@ -152,12 +153,12 @@ class SchedulingDataset(Dataset):
             elif len(label) > 3:
                 label[i] = (len(label) - label[i]) / (2*(len(label) - 3))'''
 
-            if label[i] == 2:
+            '''if label[i] == 2:
                 label[i] = 1  # 0.91
             elif label[i] > 2 or label[i] == -1:
-                label[i] = 0
-            '''if label[i] != 1:  # weights in BCEloss
                 label[i] = 0'''
+            if label[i] != 1:  # weights in BCEloss
+                label[i] = 0
 
         return torch.tensor(label, dtype=torch.float32, device=device).unsqueeze(1)
 
