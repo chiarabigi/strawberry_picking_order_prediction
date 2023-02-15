@@ -36,13 +36,13 @@ def get_occlusion1(output, occ, batch):
 def get_realscheduling(output, label, batch):
     sx = 0
     batch_size = int(batch[-1]) + 1
-    scheduling = np.zeros(4)
+    scheduling = np.zeros(17)
     for i in range(batch_size):
         dx = get_single_out(batch, i, sx)
         y_pred = output[sx:dx]
-        y_occ = label[sx:dx]
+        y_lab = label[sx:dx]
         index = y_pred.argmax(0)
-        scheduling[y_occ[index]] += 1
+        scheduling[y_lab[index] - 1] += 1
         sx = dx
     return scheduling
 

@@ -19,8 +19,7 @@ with torch.no_grad():
 def train_one_epoch():
     model.train()
     running_loss = 0.0
-    running_corrects = 0.0
-    real_scheduling = np.zeros(18)
+    real_scheduling = np.zeros(17)
     tot_nodes = 0.0
     step = 0
     occ_1 = np.zeros(4)
@@ -60,7 +59,7 @@ def train_one_epoch():
 def validation():
     model.eval()
     running_vloss = 0.0
-    real_vscheduling = np.zeros(18)
+    real_vscheduling = np.zeros(17)
     tot_vnodes = 0.0
     step = 0
     occ_1 = np.zeros(4)
@@ -87,7 +86,7 @@ def validation():
 
 def test():
     model.eval()
-    real_tscheduling = np.zeros(18)
+    real_tscheduling = np.zeros(17)
     occ_1 = np.zeros(4)
 
     for i, tbatch in enumerate(test_loader):
@@ -99,17 +98,17 @@ def test():
     print('True scheduling of predicted as first (TEST): ', real_tscheduling)
     print('Occlusion property for node with higher probability (TEST): ', occ_1)
 
-def draw_curve(current_epoch, cfg, lastEpoch, best_loss, best_vloss, best_accuracy, best_vaccuracy):
+def draw_curve(current_epoch, cfg, lastEpoch, best_loss):
     if current_epoch != lastEpoch:
         x_epoch.append(current_epoch)
-        fig.plot(x_epoch, y_loss['train'], 'bo-', label='train', linewidth=1)
-        fig.plot(x_epoch, y_loss['val'], 'ro-', label='val', linewidth=1)
+        ax.plot(x_epoch, y_loss['train'], 'bo-', label='train', linewidth=1)
+        ax.plot(x_epoch, y_loss['val'], 'ro-', label='val', linewidth=1)
     if current_epoch == 0:
-        fig.legend()
+        ax.legend()
     elif current_epoch == lastEpoch:
-        fig.text(0.5, 0.5, 'T' + str(best_loss),
-                 horizontalalignment='center', verticalalignment='center', transform=fig.transAxes)
-    fig.savefig(os.path.join('./plots/{}', 'train_{}_{}_{}_L2{}_{}.jpg'.format(goal, cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
+        ax.text(0.5, 0.5, 'T' + str(best_loss),
+                 horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
+    ax.savefig(os.path.join('./plots/{}', 'train_{}_{}_{}_L2{}_{}.jpg'.format(goal, cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
 
 
 # Main
@@ -118,8 +117,6 @@ def train():
     writer = SummaryWriter('runs/fashion_trainer_{}'.format(timestamp))
     best_vloss = 1_000_000.
     best_loss = 1_000_000.
-    best_vaccuracy = 0
-    best_accuracy = 0
     early_stopping_counter = 0
     NumEpochs = 300
     lastEpoch = NumEpochs + 1
@@ -127,17 +124,16 @@ def train():
     for epoch in trange(1, NumEpochs + 1):
         if early_stopping_counter <= 10:
             # Training
-            train_loss, train_accuracy = train_one_epoch()
+            train_loss = train_one_epoch()
             # Validation
-            val_loss, val_accuracy = validation()
+            val_loss = validation()
 
             print(f'\nTrain Loss: {train_loss:.4f}, \tValidation Loss: {val_loss:.4f}')  # , \tTest Loss: {test_loss:.4f}
-            print(f'\nTrain Accuracy: {train_accuracy:.4f}, \tValidation Accuracy: {val_accuracy:.4f}')
 
             scheduler.step(val_loss)
 
             # draw curve
-            draw_curve(epoch, cfg, lastEpoch, best_loss, best_vloss, best_accuracy, best_vaccuracy)
+            draw_curve(epoch, cfg, lastEpoch, best_loss)
 
             # Log the running loss averaged per batch for training, and validation
             writer.add_scalars('Training vs. Validation Loss', {'Training': train_loss, 'Validation': val_loss}, epoch + 1)
@@ -155,11 +151,6 @@ def train():
             if train_loss < best_loss:
                 best_loss = train_loss
 
-            if train_accuracy > best_accuracy:
-                best_accuracy = train_accuracy
-
-            if val_accuracy > best_vaccuracy:
-                best_vaccuracy = val_accuracy
         else:
             lastEpochlist.append(epoch)
             continue
@@ -174,7 +165,7 @@ def train():
     # to print loss and accuracy best values
     if len(lastEpochlist) > 0:
         lastEpoch = int(lastEpochlist[0])
-    draw_curve(lastEpoch, cfg, lastEpoch, best_loss, best_vloss, best_accuracy, best_vaccuracy)
+    draw_curve(lastEpoch, cfg, lastEpoch, best_loss)
 
 
 if __name__ == '__main__':
@@ -239,7 +230,7 @@ if __name__ == '__main__':
     y_err['train'] = []
     y_err['val'] = []
     x_epoch = []
-    fig = plt.figure()
+    fig, ax = plt.subplots()
 
     train()
 
