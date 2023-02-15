@@ -8,7 +8,7 @@ from scipy.spatial import distance
 import matplotlib.pyplot as plt
 import math
 
-encoder = torch.load('/home/chiara/TRAJECTORIES/Deep_movement_planning/code/Autoencoder/test_encoder.pth')  # autoencoder is to be downloaded
+encoder = torch.load('/home/chiara/test_encoder.pth')  # autoencoder is to be downloaded
 # unripe info
 unripe_path = '/home/chiara/strawberry_picking_order_prediction/dataset/unripe.json'  # obtained with detectron2 ran on GPU
 with open(unripe_path) as f:
@@ -33,7 +33,7 @@ for phase in phases:
     gnnann = []
     max_bbox = np.zeros(4)
     json_path = '/home/chiara/strawberry_picking_order_prediction/dataset/instances_{}.json'.format(phase)
-    img_path = '/home/chiara/SEGMENTATION/DATASETS/DATASET_ASSIGNMENT1/coco/{}/'.format(phase)  # images are to be downloaded
+    img_path = '/home/chiara/DATASETS/images/'  # images are to be downloaded
     with open(json_path) as f:
         anns = json.load(f)
     img_ann=[]
@@ -111,7 +111,7 @@ for phase in phases:
                     occ_ann.extend(occ_unripe)
                     sc_ann.extend(sc_unripe)
 
-            '''
+            ''''''
             # add patches
             xy = torch.tensor(xy)
             x, y = xy.T
@@ -131,12 +131,12 @@ for phase in phases:
             for a in range(len(o)):
                 encoder.eval()
                 compress = encoder(o[a].unsqueeze(0))
-                patches.append(compress.tolist())'''
+                patches.append(compress.tolist())
 
             gnnann.append({'img_ann': img_ann,
                            'sc_ann': sc_ann,
                            'occ_ann': occ_ann,
-                           #'patches': patches,
+                           'patches': patches,
                            'unripe': true_unripe,
                            'filename': filename
                            })

@@ -1,6 +1,10 @@
 # strawberry_picking_order_prediction
 using GNN 
 
+## Link for the images used in coco_to_gnnann
+
+https://universityoflincoln-my.sharepoint.com/:f:/g/personal/26701596_students_lincoln_ac_uk/EidUs1e5xIRMmPLYI9tmVpcBF9xqP4B03KFErKaVEK7DyA?e=q8F3Ky
+
 ## General idea
 
 Make every strawberry learn it's representation in the contest of the cluster.
