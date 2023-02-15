@@ -1,5 +1,5 @@
 from dataset import SchedulingDataset
-from model import GCN_scheduling
+from model_gpu import GCN_scheduling
 from utils import BatchAccuracy_scheduling
 
 LR = 1e-3

@@ -7,9 +7,9 @@ from torchvision import transforms
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
 
-encoder = torch.load('/home/chiara/TRAJECTORIES/Deep_movement_planning/code/Autoencoder/test_encoder.pth')
+encoder = torch.load('/home/chiara/TRAJECTORIES/Deep_movement_planning/code/Autoencoder/test_encoder.pth')  # autoencoder is to be downloaded
 # unripe info
-unripe_path = '/home/chiara/SEGMENTATION/DATASETS/DATASET_ASSIGNMENT1/unripe.json'
+unripe_path = '/home/chiara/strawberry_picking_order_prediction/dataset/unripe.json'  #  obtained with detectron2 ran on GPU
 with open(unripe_path) as f:
     unripe_ann = json.load(f)
 
@@ -27,11 +27,11 @@ all_max_bbox = np.zeros(4)
 phases=['train', 'val', 'test']
 for phase in phases:
     print('new phase')
-    filepath = '/home/chiara/SCHEDULING/GNN/dataset/scheduling/data_{}/raw/gnnann.json'.format(phase)
+    filepath = '/home/chiara/strawberry_picking_order_prediction/dataset/data_{}/raw/gnnann.json'.format(phase)
     gnnann = []
     max_bbox = np.zeros(4)
-    json_path = '/home/chiara/SEGMENTATION/DATASETS/DATASET_ASSIGNMENT1/coco/annotations/instances_{}.json'.format(phase)
-    img_path = '/home/chiara/SEGMENTATION/DATASETS/DATASET_ASSIGNMENT1/coco/{}/'.format(phase)
+    json_path = '/home/chiara/strawberry_picking_order_prediction/dataset/instances_{}.json'.format(phase)
+    img_path = '/home/chiara/SEGMENTATION/DATASETS/DATASET_ASSIGNMENT1/coco/{}/'.format(phase)  # images are to be downloaded
     with open(json_path) as f:
         anns = json.load(f)
     img_ann=[]

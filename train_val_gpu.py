@@ -194,7 +194,7 @@ def calculate_metrics(y_pred, y_true, BestModel, Phase):
     disp = ConfusionMatrixDisplay(confusion_matrix=confusion_matrix(y_true, y_pred))
     disp.plot()
     if BestModel:
-        plt.savefig(os.path.join('./plots/plots_scheduling', 'CM{}_{}_{}_{}_L2{}_{}.jpg'.format(Phase, hiddenLayers, cfg.NL, batchSize, weightDecay, SeedNum)))
+        plt.savefig(os.path.join('./plots/{}', 'CM{}_{}_{}_{}_L2{}_{}.jpg'.format(goal, Phase, hiddenLayers, cfg.NL, batchSize, weightDecay, SeedNum)))
 
 
 def draw_curve(current_epoch, cfg, lastEpoch, best_loss, best_vloss, best_accuracy, best_vaccuracy):
@@ -216,7 +216,7 @@ def draw_curve(current_epoch, cfg, lastEpoch, best_loss, best_vloss, best_accura
                  horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
         ax1.text(0.5, 0.2, 'V' + str(best_vaccuracy),
                  horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
-    fig.savefig(os.path.join('./plots/plots_scheduling', 'train_{}_{}_{}_L2{}_{}.jpg'.format(cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
+    fig.savefig(os.path.join('./plots/{}', 'train_{}_{}_{}_L2{}_{}.jpg'.format(goal, cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
 
 
 # Main
@@ -255,7 +255,7 @@ def train():
             # Track the best performance, and save the model's state
             if val_loss < best_vloss:
                 best_vloss = val_loss
-                model_path = 'best_models/best_models_scheduling/model_best'
+                model_path = 'best_models/{}/model_best'.format(goal)
                 torch.save(model.state_dict(), model_path)
                 early_stopping_counter = 0
                 BestModel = True
@@ -294,6 +294,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     print('main', device)
 
+    goal = 'easiness'
     #multiprocessing.set_start_method('spawn')
 
     # Tuned Parameters

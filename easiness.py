@@ -12,7 +12,7 @@ boxes = 0
 phases = ['train', 'val', 'test']
 for phase in phases:
     img_path = '/home/chiara/SEGMENTATION/DATASETS/DATASET_ASSIGNMENT1/coco/{}/'.format(phase)
-    anpath = '/home/chiara/SCHEDULING/GNN/dataset/scheduling/data_{}/raw/gnnann.json'.format(phase)
+    anpath = '/home/chiara/strawberry_picking_order_prediction/dataset/scheduling/data_{}/raw/gnnann.json'.format(phase)
     with open(anpath) as f:
         anns = json.load(f)
 
@@ -219,7 +219,7 @@ for phase in phases:
             newS[scheduling_script1[i] - 1] += 1
 
     ''''''
-    save_path = '/home/chiara/SCHEDULING/GNN/dataset/easiness/data_{}/raw/gnnann.json'.format(phase)
+    save_path = '/home/chiara/strawberry_picking_order_prediction/dataset/easiness/data_{}/raw/gnnann.json'.format(phase)
     with open(save_path, 'w') as f:
         json.dump(new_gnnann, f)
     print(phase + str(len(new_gnnann)))
