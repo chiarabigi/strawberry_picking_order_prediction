@@ -38,8 +38,6 @@ class SchedulingDataset(Dataset):
             sched = anns[index]['sc_ann']
             occ = anns[index]['occ_ann']
             easiness = anns[index]['easiness']
-            if None in easiness:
-                print(0)
             #patches = anns[index]['patches']
             unripe = anns[index]['unripe']
             if len(box_obj) > 1:
@@ -80,7 +78,7 @@ class SchedulingDataset(Dataset):
         [Number of Nodes, Node Feature size]
         """
         all_node_feats = []
-        occlusion_weight = [4, 2, 3, 1]  # smaller is better 4, 2, 3, 1
+        occlusion_weight = [4, 2, 3, 1, 4]  # smaller is better 4, 2, 3, 1
         ''''''
         if len(unripe) > 0:
             box.extend(unripe)

@@ -256,7 +256,7 @@ def train():
             # Track the best performance, and save the model's state
             if val_loss < best_vloss:
                 best_vloss = val_loss
-                model_path = 'best_models/{}/model_best'.format(goal)
+                model_path = 'best_models/{}/model_{}.pth'.format(goal, timestamp)
                 torch.save(model.state_dict(), model_path)
                 early_stopping_counter = 0
                 BestModel = True

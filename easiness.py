@@ -180,17 +180,21 @@ for phase in phases:
 
         easiness.extend([0] * len(unripe_ann))
 
+        infoT = {k: [dic[k] for dic in ripe_info] for k in ripe_info[0]}
+        occ_updated = infoT['occlusion']
+        occ_updated.extend([3] * len(unripe_ann))
+        occ_p = infoT['occlusion_by_berry%']
+        occ_p.extend([0] * len(unripe_ann))
+
         new_gnnann.append({
             'img_ann': ripe_ann,
             'sc_ann': scheduling,
-            'occ_ann': occ_ann,
+            'occ_ann': occ_updated,
             'easiness': easiness,
+            'berry_occ%': occ_p,
             # 'patches': anns[g]['patches'],
             'unripe': unripe_ann
         })
-
-        if len(easiness) == 0:
-            print(0)
 
         # scheduling that prefers isolated non occluded strawberries
 
