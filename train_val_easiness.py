@@ -108,7 +108,7 @@ def draw_curve(current_epoch, cfg, lastEpoch, best_loss):
     elif current_epoch == lastEpoch:
         ax.text(0.5, 0.5, 'T' + str(best_loss),
                  horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
-    ax.savefig(os.path.join('./plots/{}', 'train_{}_{}_{}_L2{}_{}.jpg'.format(goal, cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
+    fig.savefig(os.path.join('./plots/{}', 'train_{}_{}_{}_L2{}_{}.jpg'.format(goal, cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
 
 
 # Main
@@ -230,7 +230,8 @@ if __name__ == '__main__':
     y_err['train'] = []
     y_err['val'] = []
     x_epoch = []
-    fig, ax = plt.subplots()
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
 
     train()
 
