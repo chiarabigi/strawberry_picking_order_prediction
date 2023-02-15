@@ -23,7 +23,7 @@ def unite_infos(json_annotations_path, target):
 def get_occlusion1(output, occ, batch):
     sx = 0
     batch_size = int(batch[-1]) + 1
-    occlusion = np.zeros(4)
+    occlusion = np.zeros(5)
     for i in range(batch_size):
         dx = get_single_out(batch, i, sx)
         y_pred = output[sx:dx]
