@@ -6,10 +6,11 @@ from PIL import Image
 from torchvision import transforms
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
+import math
 
 encoder = torch.load('/home/chiara/TRAJECTORIES/Deep_movement_planning/code/Autoencoder/test_encoder.pth')  # autoencoder is to be downloaded
 # unripe info
-unripe_path = '/home/chiara/strawberry_picking_order_prediction/dataset/unripe.json'  #  obtained with detectron2 ran on GPU
+unripe_path = '/home/chiara/strawberry_picking_order_prediction/dataset/unripe.json'  # obtained with detectron2 ran on GPU
 with open(unripe_path) as f:
     unripe_ann = json.load(f)
 
@@ -22,12 +23,13 @@ def overlap(bbox1, bbox2):
         return False
 
 
-
+areas = []
+boxes = 0
 all_max_bbox = np.zeros(4)
 phases=['train', 'val', 'test']
 for phase in phases:
     print('new phase')
-    filepath = '/home/chiara/strawberry_picking_order_prediction/dataset/data_{}/raw/gnnann.json'.format(phase)
+    filepath = '/home/chiara/strawberry_picking_order_prediction/dataset/scheduling/data_{}/raw/gnnann.json'.format(phase)
     gnnann = []
     max_bbox = np.zeros(4)
     json_path = '/home/chiara/strawberry_picking_order_prediction/dataset/instances_{}.json'.format(phase)
@@ -39,21 +41,28 @@ for phase in phases:
     occ_ann=[]
     xy = []
     img_id = 0
+    filename = anns['images'][img_id]['file_name']
+    d = Image.open(img_path + filename)
+    width, height = d.size
+    diag = math.sqrt(math.pow(width, 2) + math.pow(height, 2))
 
     for i in range(len(anns['annotations'])):
         ''''''
         # statistics
         if anns['annotations'][i]['bbox'][0] > max_bbox[0]:
-            max_bbox[0] = anns['annotations'][i]['bbox'][0]
+            max_bbox[0] = anns['annotations'][i]['bbox'][0] / diag
         if anns['annotations'][i]['bbox'][1] > max_bbox[1]:
-            max_bbox[1] = anns['annotations'][i]['bbox'][1]
+            max_bbox[1] = anns['annotations'][i]['bbox'][1] / diag
         if anns['annotations'][i]['bbox'][2] > max_bbox[2]:
-            max_bbox[2] = anns['annotations'][i]['bbox'][2]
+            max_bbox[2] = anns['annotations'][i]['bbox'][2] / diag
         if anns['annotations'][i]['bbox'][3] > max_bbox[3]:
-            max_bbox[3] = anns['annotations'][i]['bbox'][3]
+            max_bbox[3] = anns['annotations'][i]['bbox'][3] / diag
+
+        areas.append(anns['annotations'][i]['bbox'][2] * anns['annotations'][i]['bbox'][3])
+        boxes += 1
 
         if anns['annotations'][i]['image_id']==img_id:
-            img_ann.append(anns['annotations'][i]['bbox'])
+            img_ann.append([x / diag for x in anns['annotations'][i]['bbox']])
             sc_ann.append(int(anns['annotations'][i]['caption'].split(',')[-1]))
             occ_ann.append(anns['annotations'][i]['category_id'])
             bbox = anns['annotations'][i]['bbox']
@@ -67,7 +76,6 @@ for phase in phases:
             occ_ann = [occ_ann[h] for h in order]
             xy = [xy[n] for n in order]
 
-            filename = anns['images'][img_id]['file_name']
             unripe_info = [unripe_ann[ele] for ele in range(len(unripe_ann)) if
                            unripe_ann[ele]['file_name'] == filename]
             unripe_boxes = unripe_info[0]['bboxes']
@@ -76,9 +84,9 @@ for phase in phases:
                 for idx, box in enumerate(unripe_boxes):
                     xmin = float(box[0])
                     ymin = float(box[1])
-                    width = float(box[2] - box[0])
-                    height = float(box[3] - box[1])
-                    bbox = [xmin, ymin, width, height]
+                    w = float(box[2] - box[0])
+                    h = float(box[3] - box[1])
+                    bbox = [xmin / diag, ymin / diag, w / diag, h / diag]
                     add = True
                     for el in range(len(img_ann)):
                         if overlap(bbox, img_ann[el]):
@@ -94,6 +102,8 @@ for phase in phases:
                             max_bbox[2] = bbox[2]
                         if bbox[3] > max_bbox[3]:
                             max_bbox[3] = bbox[3]
+                        areas.append(w * h)
+                        boxes += 1
 
                 if len(true_unripe) > 0:
                     occ_unripe = [3] * len(true_unripe)
@@ -101,12 +111,10 @@ for phase in phases:
                     occ_ann.extend(occ_unripe)
                     sc_ann.extend(sc_unripe)
 
-            ''''''
+            '''
             # add patches
             xy = torch.tensor(xy)
             x, y = xy.T
-            d = Image.open(img_path + filename)
-            width, height = d.size
             d = transforms.ToTensor()(d)
             m = 64  # m = 1 means a patch of 3x3 centered around given pixel location
             for p in range(len(x)):
@@ -123,7 +131,7 @@ for phase in phases:
             for a in range(len(o)):
                 encoder.eval()
                 compress = encoder(o[a].unsqueeze(0))
-                patches.append(compress.tolist())
+                patches.append(compress.tolist())'''
 
             gnnann.append({'img_ann': img_ann,
                            'sc_ann': sc_ann,
@@ -142,6 +150,11 @@ for phase in phases:
             bbox = anns['annotations'][i]['bbox']
             xy.append([int(bbox[0] + bbox[2] / 2), int(bbox[1] + bbox[3] / 2)])
             img_id = img_id + 1
+            if img_id < len(anns['images']):
+                filename = anns['images'][img_id]['file_name']
+                d = Image.open(img_path + filename)
+                width, height = d.size
+                diag = math.sqrt(math.pow(width, 2) + math.pow(height, 2))
 
     ''''''
     # statistics
@@ -156,6 +169,7 @@ for phase in phases:
     print(phase)
     print('max: ', max_bbox)
 
+
     ''''''
     # save
     with open(filepath, 'w') as f:
@@ -166,3 +180,7 @@ for phase in phases:
 ''''''
 # statistics
 print('together max: ', all_max_bbox)
+print('areas', areas)
+print('boxes', boxes)
+print('avg area', sum(areas) / boxes)
+one = 1
