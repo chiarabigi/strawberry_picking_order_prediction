@@ -8,8 +8,7 @@ from datetime import datetime
 import os
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-import config_scheduling
-import config_picking_success
+import config_scheduling as cfg
 from utils import get_occlusion1
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -20,15 +19,7 @@ with torch.no_grad():
 
 # Choose goal
 
-goal = 'easiness'  # alternative: 'picking_success'
-if goal == 'scheduling':
-    cfg = config_scheduling
-if goal == 'new_scheduling':
-    cfg = config_scheduling
-if goal == 'easiness':
-        cfg = config_scheduling
-elif goal == 'picking_success':
-    cfg = config_picking_success
+goal = 'easiness'
 
 # Tuned Parameters
 
@@ -157,12 +148,11 @@ def train_one_epoch():
     # for loss and accuracy plot
     y_loss['train'].append(running_loss)
     y_err['train'].append(running_corrects)
-    if goal != 'picking_success':
-        print('True scheduling of predicted as first (TRAIN): ', real_scheduling)
-        print(f'\nAverage probability (TRAIN) of first being first: {float(prob1 / real_scheduling[0]):.4f},'
-              f'\t or second: {float(prob2 / real_scheduling[1]):.4f}')
-        print('Occlusion property for classified as first (TRAIN): ', occ_class)
-        print('Occlusion property for node with higher probability (TRAIN): ', occ_1)
+    print('True scheduling of predicted as first (TRAIN): ', real_scheduling)
+    print(f'\nAverage probability (TRAIN) of first being first: {float(prob1 / real_scheduling[0]):.4f},'
+          f'\t or second: {float(prob2 / real_scheduling[1]):.4f}')
+    print('Occlusion property for classified as first (TRAIN): ', occ_class)
+    print('Occlusion property for node with higher probability (TRAIN): ', occ_1)
     return running_loss, running_corrects
 
 
@@ -186,15 +176,14 @@ def validation():
         vloss = criterion(voutputs, vbatch.y)
         running_vloss += vloss.item()
         running_vcorrects += batchAccuracy(voutputs, vbatch.y, vbatch.batch)
-        if goal != 'picking_success':
-            for j in range(len(vbatch.y)):
-                if voutputs[j] > 0.5:
-                    occ_class[vbatch.info[j]] += 1
-                    real_vscheduling[vbatch.label[j] - 1] += 1
-                    if vbatch.label[j] == 1:
-                        vprob1 += voutputs[j]
-                    elif vbatch.label[j] == 2:
-                        vprob2 += voutputs[j]
+        for j in range(len(vbatch.y)):
+            if voutputs[j] > 0.5:
+                occ_class[vbatch.info[j]] += 1
+                real_vscheduling[vbatch.label[j] - 1] += 1
+                if vbatch.label[j] == 1:
+                    vprob1 += voutputs[j]
+                elif vbatch.label[j] == 2:
+                    vprob2 += voutputs[j]
 
             occ_1 += get_occlusion1(voutputs, vbatch.info, vbatch.batch)
         tot_vnodes += len(vbatch.batch)
@@ -205,12 +194,11 @@ def validation():
 
     y_loss['val'].append(avg_vloss)
     y_err['val'].append(avg_vcorrects)
-    if goal != 'picking_success':
-        print('True scheduling of predicted as first (VAL): ', real_vscheduling)
-        print(f'\nAverage probability (VAL) of first being first: {float(vprob1 / real_vscheduling[0]):.4f},'
-              f'\t or second: {float( vprob2 / real_vscheduling[1]):.4f}')
-        print('Occlusion property for classified as first (VAL): ', occ_class)
-        print('Occlusion property for node with higher probability (VAL): ', occ_1)
+    print('True scheduling of predicted as first (VAL): ', real_vscheduling)
+    print(f'\nAverage probability (VAL) of first being first: {float(vprob1 / real_vscheduling[0]):.4f},'
+          f'\t or second: {float( vprob2 / real_vscheduling[1]):.4f}')
+    print('Occlusion property for classified as first (VAL): ', occ_class)
+    print('Occlusion property for node with higher probability (VAL): ', occ_1)
     return avg_vloss, avg_vcorrects
 
 
@@ -227,15 +215,14 @@ def test():
     for i, tbatch in enumerate(test_loader):
         tbatch.to(device)
         pred = model(tbatch)
-        if goal != 'picking_success':
-            for j in range(len(tbatch.y)):
-                if pred[j] > 0.5:
-                    occ_class[tbatch.info[j]] += 1
-                    real_tscheduling[tbatch.label[j] - 1] += 1
-                    if tbatch.label[j] == 1:
-                        tprob1 += pred[j]
-                    elif tbatch.label[j] == 2:
-                        tprob2 += pred[j]
+        for j in range(len(tbatch.y)):
+            if pred[j] > 0.5:
+                occ_class[tbatch.info[j]] += 1
+                real_tscheduling[tbatch.label[j] - 1] += 1
+                if tbatch.label[j] == 1:
+                    tprob1 += pred[j]
+                elif tbatch.label[j] == 2:
+                    tprob2 += pred[j]
 
             occ_1 += get_occlusion1(pred, tbatch.info, tbatch.batch)
 
@@ -254,12 +241,11 @@ def test():
     all_preds = np.concatenate(all_y_pred)
     all_labels = np.concatenate(all_y_true)
     calculate_metrics(all_preds, all_labels)
-    if goal != 'picking_success':
-        print('True scheduling of predicted as first (TEST): ', real_tscheduling)
-        print(f'\nAverage probability (TEST) of first being first: {float(tprob1 / real_tscheduling[0]):.4f},'
-              f'\t or second: {float(tprob2 / real_tscheduling[1]):.4f}')
-        print('Occlusion property for classified as first (TEST): ', occ_class)
-        print('Occlusion property for node with higher probability (TEST): ', occ_1)
+    print('True scheduling of predicted as first (TEST): ', real_tscheduling)
+    print(f'\nAverage probability (TEST) of first being first: {float(tprob1 / real_tscheduling[0]):.4f},'
+          f'\t or second: {float(tprob2 / real_tscheduling[1]):.4f}')
+    print('Occlusion property for classified as first (TEST): ', occ_class)
+    print('Occlusion property for node with higher probability (TEST): ', occ_1)
 
 
 def calculate_metrics(y_pred, y_true):
