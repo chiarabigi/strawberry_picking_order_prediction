@@ -8,7 +8,8 @@ from datetime import datetime
 import os
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-import config_scheduling as cfg
+import config_scheduling
+import config_scheduling_gpu
 from utils import get_occlusion1
 import multiprocessing
 
@@ -293,6 +294,11 @@ def train():
 if __name__ == '__main__':
     device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     print('main', device)
+
+    if device == 'cpu':
+        cfg = config_scheduling
+    else:
+        cfg = config_scheduling_gpu
 
     goal = 'easiness'
     #multiprocessing.set_start_method('spawn')
