@@ -163,7 +163,7 @@ class SchedulingDataset(Dataset):
         return torch.tensor(label, dtype=torch.float32, device=device).unsqueeze(1)
 
     def _get_occlusion(self, occ):
-        occlusion_properties = ['occluded', 'occluding', 'occluded/occluding', 'neither']
+        occlusion_properties = ['occluded_by_leaf', 'occluding', 'occluded/occluding', 'neither', 'occluded_by_berry']
         info=[]
         for i in range(len(occ)):
             info.append(occlusion_properties[occ[i]])
