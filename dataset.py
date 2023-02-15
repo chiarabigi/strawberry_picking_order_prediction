@@ -38,6 +38,8 @@ class SchedulingDataset(Dataset):
             sched = anns[index]['sc_ann']
             occ = anns[index]['occ_ann']
             easiness = anns[index]['easiness']
+            if None in easiness:
+                print(0)
             #patches = anns[index]['patches']
             unripe = anns[index]['unripe']
             if len(box_obj) > 1:

@@ -1,6 +1,6 @@
 import numpy as np
-from torch_geometric.loader import DataLoader
 import torch
+from torch_geometric.loader import DataLoader
 from tqdm import trange
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, f1_score, accuracy_score, precision_score, recall_score
 from torch.utils.tensorboard import SummaryWriter
@@ -40,8 +40,8 @@ def train_one_epoch(BestModel, Phase):
         # batch.to(device)
         outputs = model(batch)
         weights = torch.ones_like(batch.y) * 84.6 + (1.0 - 1.0 * 84.6) * batch.y
-        loss = torch.nn.functional.binary_cross_entropy(outputs, batch.y, weights)
-        # loss = criterion(outputs, batch.y)
+        # loss = torch.nn.functional.binary_cross_entropy(outputs, batch.y, weights)
+        loss = criterion(outputs, batch.y)
         # backward
         loss.backward()
 
@@ -110,8 +110,8 @@ def validation():
         # vbatch.to(device)
         voutputs = model(vbatch)
         weights = torch.ones_like(vbatch.y) / 0.3 + (1.0 - 1.0 / 0.3) * vbatch.y
-        vloss = torch.nn.functional.binary_cross_entropy(voutputs, vbatch.y, weights)
-        # vloss = criterion(voutputs, vbatch.y)
+        # vloss = torch.nn.functional.binary_cross_entropy(voutputs, vbatch.y, weights)
+        vloss = criterion(voutputs, vbatch.y)
         running_vloss += vloss.item()
         running_vcorrects += batchAccuracy(voutputs, vbatch.y, vbatch.batch)
         for j in range(len(vbatch.y)):
@@ -295,7 +295,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     print('main', device)
 
-    if device == 'cpu':
+    if device.type == 'cpu':
         cfg = config_scheduling
     else:
         cfg = config_scheduling_gpu
@@ -323,11 +323,11 @@ if __name__ == '__main__':
     # Load Dataset
 
     print("Loading data_scripts...")
-    train_path = 'dataset/scheduling/data_train/'
+    train_path = 'dataset/{}/data_train/'.format(goal)
     train_dataset = cfg.DATASET(train_path)
-    val_path = 'dataset/scheduling/data_val/'
+    val_path = 'dataset/{}/data_val/'.format(goal)
     val_dataset = cfg.DATASET(val_path)
-    test_path = 'dataset/scheduling/data_test/'
+    test_path = 'dataset/{}/data_test/'.format(goal)
     test_dataset = cfg.DATASET(test_path)
 
     train_loader = DataLoader(train_dataset, batch_size=batchSize, shuffle=True)  #, num_workers=2, pin_memory_device='cuda:1', pin_memory=True)

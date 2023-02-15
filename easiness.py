@@ -178,14 +178,19 @@ for phase in phases:
         for i in range(len(scheduling)):
             easyS[scheduling[i] - 1] += 1
 
+        easiness.extend([0] * len(unripe_ann))
+
         new_gnnann.append({
             'img_ann': ripe_ann,
             'sc_ann': scheduling,
             'occ_ann': occ_ann,
-            'easiness': easiness.extend([0] * len(unripe_ann)),
+            'easiness': easiness,
             # 'patches': anns[g]['patches'],
             'unripe': unripe_ann
         })
+
+        if len(easiness) == 0:
+            print(0)
 
         # scheduling that prefers isolated non occluded strawberries
 
