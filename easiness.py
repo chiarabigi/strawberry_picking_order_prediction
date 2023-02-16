@@ -9,9 +9,9 @@ oldS = [0] * 17
 newS = [0] * 17
 easyS = [0] * 17
 boxes = 0
+img_path = '/home/chiara/DATASETS/images/'
 phases = ['train', 'val', 'test']
 for phase in phases:
-    img_path = '/home/chiara/SEGMENTATION/DATASETS/DATASET_ASSIGNMENT1/coco/{}/'.format(phase)
     anpath = '/home/chiara/strawberry_picking_order_prediction/dataset/scheduling/data_{}/raw/gnnann.json'.format(phase)
     with open(anpath) as f:
         anns = json.load(f)
@@ -80,6 +80,7 @@ for phase in phases:
         # max of min distance:
 
         all_ripe_min_dist = []
+        all_ripe_min_edges = []
         for i in range(len(ripe_ann)):
 
             xrmin = ripe_info[i]['xmin']
@@ -93,10 +94,11 @@ for phase in phases:
 
             all_strawberries = copy.copy(ripe_info)  # I may have changed ripe_info
             all_strawberries.extend(unripe_info)
-            all_strawberries.pop(i)
 
             dist = []
-            for j in range(len(all_strawberries)):
+            edges = []
+            condition = [j for j in range(len(all_strawberries)) if j != i]
+            for j in condition:
                 xomin = all_strawberries[j]['xmin']
                 yomin = all_strawberries[j]['ymin']
                 xomax = all_strawberries[j]['xmax']
@@ -120,6 +122,7 @@ for phase in phases:
 
                 box_dist = ip - ipr - ior  # distance between boxes
                 dist.append(box_dist)
+                edges.append([i, j])
 
                 # Is this strawberry occluded by another one?
                 if box_dist < 0:
@@ -147,8 +150,8 @@ for phase in phases:
                     ripe_info[i]['occlusion_by_berry%'] = occlusion_fraction
 
             all_ripe_min_dist.append(min(dist))
+            all_ripe_min_edges.append(edges[dist.index(min(dist))])
 
-        all_ripe_min_dist_safe = copy.copy(all_ripe_min_dist)
         # easiness:
 
         a1, a2 = Image.open(img_path + filename).size
@@ -178,22 +181,22 @@ for phase in phases:
         for i in range(len(scheduling)):
             easyS[scheduling[i] - 1] += 1
 
+        scheduling.extend([18] * len(unripe_ann))
         easiness.extend([0] * len(unripe_ann))
+        occ_score.extend([1] * len(unripe_ann))
 
         infoT = {k: [dic[k] for dic in ripe_info] for k in ripe_info[0]}
         occ_updated = infoT['occlusion']
         occ_updated.extend([3] * len(unripe_ann))
-        occ_p = infoT['occlusion_by_berry%']
-        occ_p.extend([0] * len(unripe_ann))
 
         new_gnnann.append({
-            'img_ann': ripe_ann,
+            'img_ann': anns[g]['img_ann'],
             'sc_ann': scheduling,
             'occ_ann': occ_updated,
+            'occ_score': occ_score,
             'easiness': easiness,
-            'berry_occ%': occ_p,
             # 'patches': anns[g]['patches'],
-            'unripe': unripe_ann
+            'unripe': anns[g]['unripe']
         })
 
         # scheduling that prefers isolated non occluded strawberries
@@ -202,15 +205,15 @@ for phase in phases:
         occluding = []
         occluded_occluding = []
         occluded = []
-        for k in range(len(all_ripe_min_dist_safe)):
+        for k in range(len(all_ripe_min_dist)):
             if occ_ann[k] == 3:
-                neither.append(all_ripe_min_dist_safe[k])
+                neither.append(all_ripe_min_dist[k])
             elif occ_ann[k] == 1:
-                occluding.append(all_ripe_min_dist_safe[k])
+                occluding.append(all_ripe_min_dist[k])
             elif occ_ann[k] == 2:
-                occluded_occluding.append(all_ripe_min_dist_safe[k])
+                occluded_occluding.append(all_ripe_min_dist[k])
             elif occ_ann[k] == 0:
-                occluded.append(all_ripe_min_dist_safe[k])
+                occluded.append(all_ripe_min_dist[k])
 
         neither_sorted_indices = sorted(range(len(neither)), reverse=True, key=lambda k: neither[k])
         occluding_sorted_indices = [x + len(neither) for x in

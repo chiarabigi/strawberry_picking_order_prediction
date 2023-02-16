@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import json
+from scipy.spatial import distance
+import copy
 
 
 def unite_infos(json_annotations_path, target):
@@ -36,7 +38,7 @@ def get_occlusion1(output, occ, batch):
 def get_realscheduling(output, label, batch):
     sx = 0
     batch_size = int(batch[-1]) + 1
-    scheduling = np.zeros(17)
+    scheduling = np.zeros(18)
     for i in range(batch_size):
         dx = get_single_out(batch, i, sx)
         y_pred = output[sx:dx]
@@ -186,3 +188,76 @@ def highests(list):  # I discovered that torch.sort does a similar thing and bet
                 vector[i]=-1
     higher_indicator = higher_indicator - np.ones_like(higher_indicator)
     return higher_indicator.astype(int)
+
+
+def distances(ripe_ann, unripe_ann):
+    ripe_info = []
+    for rc in range(len(ripe_ann)):
+        xrc = ripe_ann[rc][0] + ripe_ann[rc][2] / 2
+        yrc = ripe_ann[rc][1] + ripe_ann[rc][3] / 2
+        wr2 = ripe_ann[rc][2] / 2
+        ripe_info.append({
+            'xc': xrc,
+            'yc': yrc,
+            'w_half': wr2
+        })
+
+    unripe_info = []
+    for uc in range(len(unripe_ann)):
+        xuc = unripe_ann[uc][0] + unripe_ann[uc][2] / 2
+        yuc = unripe_ann[uc][1] + unripe_ann[uc][3] / 2
+        wu2 = unripe_ann[uc][2] / 2
+        unripe_info.append({
+            'xc': xuc,
+            'yc': yuc,
+            'w_half': wu2,
+        })
+
+    # max of min distance:
+
+    all_min_dist = []
+    all_min_edges = []
+    all_feats = []
+    all_edges = []
+    all_strawberries = copy.copy(ripe_info)  # I may have changed ripe_info
+    all_strawberries.extend(unripe_info)
+    for i in range(len(all_strawberries)):
+
+        xrc = all_strawberries[i]['xc']
+        yrc = all_strawberries[i]['yc']
+        wr2 = all_strawberries[i]['w_half']
+
+        dist = []
+        edges = []
+        # Compute all possible edges (sides + diagonals), ONCE
+        condition = [j for j in range(len(all_strawberries)) if j != i]
+        for j in condition:
+            if [i, j] not in all_edges:
+                xoc = all_strawberries[j]['xc']
+                yoc = all_strawberries[j]['yc']
+                wo2 = all_strawberries[j]['w_half']
+
+                ip = distance.euclidean((xrc, yrc), (xoc, yoc))
+                x = abs(float(xoc - xrc))
+                try:
+                    cosalpha = ip / x
+                    ipr = wr2 * cosalpha
+                    ior = wo2 * cosalpha
+                except ZeroDivisionError:
+                    y = abs(float(yoc - yrc))
+                    sinaplha = ip / y
+                    ipr = wr2 * sinaplha
+                    ior = wo2 * sinaplha
+
+                box_dist = ip - ipr - ior  # distance between boxes
+                dist.append(box_dist)
+                edges.append([[i, j], [j, i]])
+
+                all_feats += [box_dist, box_dist]
+                all_edges += [[i, j], [j, i]]
+
+        if len(dist) > 0:
+            all_min_dist += [min(dist), min(dist)]
+            all_min_edges += edges[dist.index(min(dist))]
+
+    return all_feats, all_edges, all_min_dist, all_min_edges

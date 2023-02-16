@@ -4,7 +4,8 @@ import torch
 from torch_geometric.data import Dataset, Data
 from scipy.spatial import distance
 import json
-from utils import only_sides
+from utils import only_sides, distances
+import copy
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -37,14 +38,15 @@ class SchedulingDataset(Dataset):
             box_obj = anns[index]['img_ann']
             sched = anns[index]['sc_ann']
             occ = anns[index]['occ_ann']
+            occ_score = anns[index]['occ_score']
             easiness = anns[index]['easiness']
             #patches = anns[index]['patches']
             unripe = anns[index]['unripe']
             if len(box_obj) > 1:
                 # Get node features
-                node_feats = self._get_node_features(box_obj, occ, unripe)
+                node_feats = self._get_node_features(box_obj, occ_score, unripe)
                 # Get edge features and adjacency info
-                edge_feats, edge_index = self.knn(box_obj)
+                edge_feats, edge_index = self.knn(box_obj, unripe)
                 # Save actual label
                 label = self._get_label(sched)
                 # Get scheduling info
@@ -72,13 +74,13 @@ class SchedulingDataset(Dataset):
                 idx += 1
 
 
-    def _get_node_features(self, box, occ, unripe):
+    def _get_node_features(self, ripe, occ, unripe):
         """
         This will return a matrix / 2d array of the shape
         [Number of Nodes, Node Feature size]
         """
         all_node_feats = []
-        occlusion_weight = [4, 2, 3, 1, 4]  # smaller is better 4, 2, 3, 1
+        box = copy.copy(ripe)
         ''''''
         if len(unripe) > 0:
             box.extend(unripe)
@@ -101,7 +103,7 @@ class SchedulingDataset(Dataset):
             # Feature 4: Ripeness
             node_feats.append(rip)
             # Feature 5: Occlusion weight
-            node_feats.append(1 / occlusion_weight[occ[a]])
+            node_feats.append(occ[a])  # the occlusion score was computed in the 'easiest' script
             # Feature 6-86: Image patch
             # node_feats.extend(patches[a])
 
@@ -110,24 +112,14 @@ class SchedulingDataset(Dataset):
 
         all_node_feats = np.asarray(all_node_feats)
 
-        return torch.tensor(all_node_feats, dtype=torch.float, device=device)
+        return torch.tensor(all_node_feats, dtype=torch.float32, device=device)
 
-    def knn(self, box):  # "k-nearest neighbour"
-        edge_feats = []
-        edge_indices = []
-        checked = []
-        length = []
+    def knn(self, ripe, unripe):  # "k-nearest neighbour"
         # Compute all possible edges (sides + diagonals), ONCE
-        for i in range(len(box)):
-            for j in range(len(box)-1):
-                if j!=i and [i, j] not in checked:
-                    # edge feature: Euclidean Distance
-                    L = distance.euclidean((box[i][0], box[i][1]), (box[j][0], box[j][1]))
-                    length += [L]
-                    edge_feats += [L, L]
-                    edge_indices += [[i, j], [j, i]]
-                    checked.append([j, i])
+        edge_feats, edge_indices, min_dist, min_edges = distances(ripe, unripe)
 
+        box = copy.copy(ripe)
+        box.extend(unripe)
         sides_feats, sides_indices = only_sides(edge_feats, edge_indices, box)
         # Take only diagonals
         if len(box) > 3:
@@ -135,9 +127,14 @@ class SchedulingDataset(Dataset):
             diag_indices = [ele for ele in edge_indices if ele not in sides_indices]
             edge_feats = diag_feats
             edge_indices = diag_indices
-        edge_indices = torch.tensor(edge_indices, device=device)
+        min_dist = [round(x, 5) for x in min_dist]
+        edge_feats = [round(x, 5) for x in edge_feats]
+        edge_feats.extend([x for x in min_dist if x not in edge_feats])
+        edge_indices.extend([x for x in min_edges if x not in edge_indices])
+
+        edge_indices = torch.tensor(edge_indices, dtype=torch.float32, device=device)
         edge_indices = edge_indices.t().to(torch.long).view(2, -1)
-        edge_feats = torch.tensor(edge_feats, dtype=torch.float, device=device)
+        edge_feats = torch.tensor(edge_feats, dtype=torch.float32, device=device)
         return edge_feats, edge_indices
 
 

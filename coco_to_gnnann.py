@@ -15,9 +15,13 @@ with open(unripe_path) as f:
     unripe_ann = json.load(f)
 
 
-def overlap(bbox1, bbox2):
-    L = distance.euclidean((bbox1[0], bbox1[1]), (bbox2[0], bbox2[1]))
-    if L < 30:
+def overlap(bbox1, bbox2, diag):
+    x1c = bbox1[0] + bbox1[2] / 2
+    y1c = bbox1[1] + bbox1[3] / 2
+    x2c = bbox2[0] + bbox2[2] / 2
+    y2c = bbox2[1] + bbox2[3] / 2
+    L = distance.euclidean((x1c, y1c), (x2c, y2c))
+    if L < 0.5:
         return True
     else:
         return False
@@ -27,6 +31,8 @@ areas = []
 boxes = 0
 all_max_bbox = np.zeros(4)
 phases=['train', 'val', 'test']
+ripe = 0
+unripe = 0
 for phase in phases:
     print('new phase')
     filepath = '/home/chiara/strawberry_picking_order_prediction/dataset/scheduling/data_{}/raw/gnnann.json'.format(phase)
@@ -47,7 +53,7 @@ for phase in phases:
     diag = math.sqrt(math.pow(width, 2) + math.pow(height, 2))
 
     for i in range(len(anns['annotations'])):
-        ''''''
+        '''
         # statistics
         if anns['annotations'][i]['bbox'][0] > max_bbox[0]:
             max_bbox[0] = anns['annotations'][i]['bbox'][0] / diag
@@ -58,7 +64,7 @@ for phase in phases:
         if anns['annotations'][i]['bbox'][3] > max_bbox[3]:
             max_bbox[3] = anns['annotations'][i]['bbox'][3] / diag
 
-        areas.append(anns['annotations'][i]['bbox'][2] * anns['annotations'][i]['bbox'][3])
+        areas.append(anns['annotations'][i]['bbox'][2] * anns['annotations'][i]['bbox'][3])'''
         boxes += 1
 
         if anns['annotations'][i]['image_id']==img_id:
@@ -89,7 +95,7 @@ for phase in phases:
                     bbox = [xmin / diag, ymin / diag, w / diag, h / diag]
                     add = True
                     for el in range(len(img_ann)):
-                        if overlap(bbox, img_ann[el]):
+                        if overlap(bbox, img_ann[el], diag):
                             add = False
                     if add:
                         true_unripe.append(bbox)
@@ -111,7 +117,7 @@ for phase in phases:
                     occ_ann.extend(occ_unripe)
                     sc_ann.extend(sc_unripe)
 
-            ''''''
+            '''
             # add patches
             xy = torch.tensor(xy)
             x, y = xy.T
@@ -131,32 +137,34 @@ for phase in phases:
             for a in range(len(o)):
                 encoder.eval()
                 compress = encoder(o[a].unsqueeze(0))
-                patches.append(compress.tolist())
+                patches.append(compress.tolist())'''
 
             gnnann.append({'img_ann': img_ann,
                            'sc_ann': sc_ann,
                            'occ_ann': occ_ann,
-                           'patches': patches,
+                           # 'patches': patches,
                            'unripe': true_unripe,
                            'filename': filename
                            })
+            ripe += len(img_ann)
+            unripe += len(true_unripe)
             sc_ann = []
             img_ann = []
             occ_ann = []
             xy = []
-            img_ann.append(anns['annotations'][i]['bbox'])
-            sc_ann.append(int(anns['annotations'][i]['caption'].split(',')[-1]))
-            occ_ann.append(anns['annotations'][i]['category_id'])
-            bbox = anns['annotations'][i]['bbox']
-            xy.append([int(bbox[0] + bbox[2] / 2), int(bbox[1] + bbox[3] / 2)])
             img_id = img_id + 1
             if img_id < len(anns['images']):
                 filename = anns['images'][img_id]['file_name']
                 d = Image.open(img_path + filename)
                 width, height = d.size
                 diag = math.sqrt(math.pow(width, 2) + math.pow(height, 2))
+                img_ann.append([x / diag for x in anns['annotations'][i]['bbox']])
+                sc_ann.append(int(anns['annotations'][i]['caption'].split(',')[-1]))
+                occ_ann.append(anns['annotations'][i]['category_id'])
+                bbox = anns['annotations'][i]['bbox']
+                xy.append([int(bbox[0] + bbox[2] / 2), int(bbox[1] + bbox[3] / 2)])
 
-    ''''''
+    '''
     # statistics
     if max_bbox[0] > all_max_bbox[0]:
         all_max_bbox[0] = max_bbox[0]
@@ -167,7 +175,7 @@ for phase in phases:
     if max_bbox[3] > all_max_bbox[3]:
         all_max_bbox[3] = max_bbox[3]
     print(phase)
-    print('max: ', max_bbox)
+    print('max: ', max_bbox)'''
 
 
     ''''''
@@ -180,6 +188,8 @@ for phase in phases:
 ''''''
 # statistics
 print('together max: ', all_max_bbox)
-print('areas', areas)
+print('max areas', max(areas))
 print('boxes', boxes)
 print('avg area', sum(areas) / boxes)
+print('ripe', ripe)
+print('unripe', unripe)

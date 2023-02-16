@@ -19,7 +19,7 @@ with torch.no_grad():
 def train_one_epoch():
     model.train()
     running_loss = 0.0
-    real_scheduling = np.zeros(17)
+    real_scheduling = np.zeros(18)
     tot_nodes = 0.0
     step = 0
     occ_1 = np.zeros(5)
@@ -59,7 +59,7 @@ def train_one_epoch():
 def validation():
     model.eval()
     running_vloss = 0.0
-    real_vscheduling = np.zeros(17)
+    real_vscheduling = np.zeros(18)
     tot_vnodes = 0.0
     step = 0
     occ_1 = np.zeros(5)
@@ -86,7 +86,7 @@ def validation():
 
 def test():
     model.eval()
-    real_tscheduling = np.zeros(17)
+    real_tscheduling = np.zeros(18)
     occ_1 = np.zeros(5)
 
     for i, tbatch in enumerate(test_loader):
@@ -142,7 +142,7 @@ def train():
             # Track the best performance, and save the model's state
             if val_loss < best_vloss:
                 best_vloss = val_loss
-                model_path = '/best_models/{}/model_{}.pth'.format(goal, timestamp)
+                model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/easiness/model_{}.pth'.format(goal, timestamp)
                 torch.save(model.state_dict(), model_path)
                 early_stopping_counter = 0
             else:
