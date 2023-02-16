@@ -1,5 +1,7 @@
 import json
 import random
+import statistics
+
 import numpy as np
 import torch
 from PIL import Image
@@ -7,6 +9,7 @@ from torchvision import transforms
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
 import math
+import statistics
 
 encoder = torch.load('/home/chiara/test_encoder.pth')  # autoencoder is to be downloaded
 # unripe info
@@ -33,6 +36,8 @@ all_max_bbox = np.zeros(4)
 phases=['train', 'val', 'test']
 ripe = 0
 unripe = 0
+areas_images = []
+images = 0
 for phase in phases:
     print('new phase')
     filepath = '/home/chiara/strawberry_picking_order_prediction/dataset/scheduling/data_{}/raw/gnnann.json'.format(phase)
@@ -49,7 +54,9 @@ for phase in phases:
     img_id = 0
     filename = anns['images'][img_id]['file_name']
     d = Image.open(img_path + filename)
+    images += 1
     width, height = d.size
+    areas_images.append(width*height)
     diag = math.sqrt(math.pow(width, 2) + math.pow(height, 2))
 
     for i in range(len(anns['annotations'])):
@@ -156,7 +163,9 @@ for phase in phases:
             if img_id < len(anns['images']):
                 filename = anns['images'][img_id]['file_name']
                 d = Image.open(img_path + filename)
+                images += 1
                 width, height = d.size
+                areas_images.append(width * height)
                 diag = math.sqrt(math.pow(width, 2) + math.pow(height, 2))
                 img_ann.append([x / diag for x in anns['annotations'][i]['bbox']])
                 sc_ann.append(int(anns['annotations'][i]['caption'].split(',')[-1]))
@@ -187,9 +196,16 @@ for phase in phases:
 
 ''''''
 # statistics
-print('together max: ', all_max_bbox)
+#print('together max: ', all_max_bbox)
 print('max areas', max(areas))
-print('boxes', boxes)
+print('min areas', min(areas))
 print('avg area', sum(areas) / boxes)
+print('median area', statistics.median(areas))
+print('boxes', boxes)
+print('max areas images', max(areas_images))
+print('min areas images', min(areas_images))
+print('avg area images', sum(areas_images) / images)
+print('median area images', statistics.median(areas_images))
+print('images', images)
 print('ripe', ripe)
 print('unripe', unripe)
