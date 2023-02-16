@@ -3,9 +3,9 @@ from model_gpu import GCN_scheduling
 from utils import BatchAccuracy_scheduling
 
 LR = 1e-3
-HL = 128
+HL = 8
 BATCHSIZE = 32
-NL = 5
+NL = 0
 WEIGHTDECAY = 0.01
 SEEDNUM = 0
 TORCHSEED = 0
