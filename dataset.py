@@ -42,6 +42,8 @@ class SchedulingDataset(Dataset):
             easiness = anns[index]['easiness']
             #patches = anns[index]['patches']
             unripe = anns[index]['unripe']
+            students_scheduling = anns[index]['students_sc_ann']
+            heuristic_scheduling = anns[index]['heuristic_sc_ann']
             if len(box_obj) > 1:
                 # Get node features
                 node_feats = self._get_node_features(box_obj, occ_score, unripe)
@@ -60,6 +62,8 @@ class SchedulingDataset(Dataset):
                             edge_attr=edge_feats,
                             y=torch.tensor(easiness, dtype=torch.float32, device=device).unsqueeze(1),
                             scheduling=scheduling,
+                            students_ann=students_scheduling,
+                            heuristic_ann=heuristic_scheduling,
                             label=label,
                             info=torch.tensor(occ, device=device).unsqueeze(1)
                             )
@@ -127,8 +131,8 @@ class SchedulingDataset(Dataset):
             diag_indices = [ele for ele in edge_indices if ele not in sides_indices]
             edge_feats = diag_feats
             edge_indices = diag_indices
-        min_dist = [round(x, 5) for x in min_dist]
-        edge_feats = [round(x, 5) for x in edge_feats]
+        min_dist = [round(x, 7) for x in min_dist]
+        edge_feats = [round(x, 7) for x in edge_feats]
         edge_feats.extend([x for x in min_dist if x not in edge_feats])
         edge_indices.extend([x for x in min_edges if x not in edge_indices])
 

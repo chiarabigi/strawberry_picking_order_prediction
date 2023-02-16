@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import config_scheduling
 import config_scheduling_gpu
-from utils import get_occlusion1, get_realscheduling
+from utils import get_occlusion1, get_realscheduling, get_whole_scheduling, get_label_scheduling
 import multiprocessing
 
 with torch.no_grad():
@@ -88,15 +88,58 @@ def test():
     model.eval()
     real_tscheduling = np.zeros(18)
     occ_1 = np.zeros(5)
+    sched_pred = np.zeros(18)
+    sched_true = np.zeros(18)
+    sched_students = np.zeros(18)
+    sched_heuristic = np.zeros(18)
 
     for i, tbatch in enumerate(test_loader):
         # tbatch.to(device)
         pred = model(tbatch)
         real_tscheduling += get_realscheduling(pred, tbatch.label, tbatch.batch)
         occ_1 += get_occlusion1(pred, tbatch.info, tbatch.batch)
+        s_pred, s_true = get_whole_scheduling(pred, tbatch.label, tbatch.batch)
+        sched_students += get_label_scheduling(tbatch.students_ann, tbatch.batch)
+        sched_heuristic += get_label_scheduling(tbatch.heuristic_ann, tbatch.batch)
+        sched_pred += s_pred
+        sched_true += s_true
 
-    print('True scheduling of predicted as first (TEST): ', real_tscheduling)
-    print('Occlusion property for node with higher probability (TEST): ', occ_1)
+    for i in range(len(real_tscheduling) - 1):
+        print(
+            f'\n {100 * real_tscheduling[i] / real_tscheduling.sum():.4f}% of strawberries predicted as EASIEST TO PICK in the cluster where scheduled as {i + 1:.4f}')
+    print(
+        f'\n {100 * real_tscheduling[-1] / real_tscheduling.sum():.4f}% of strawberries predicted as EASIEST TO PICK in the cluster where UNRIPE')
+    occlusion_properties = ['NON OCCLUDED', 'OCCLUDED BY LEAF', 'OCCLUDED BY A BERRY']
+    occ = np.zeros(3)
+    occ[0] += occ_1[1] + occ_1[3]
+    occ[1] += occ_1[0] + occ_1[2]
+    occ[2] += occ_1[4]
+    for i in range(len(occ)):
+        print(
+            f'\n {100 * occ[i] / occ.sum():.4f}% of strawberries predicted as EASIEST TO PICK in the cluster where labeled as {occlusion_properties[i]}')
+
+    sched_pred += 2
+    sched_students += 2
+    sched_true += 2
+    sched_heuristic += 2
+    print('\nPREDICTION VS STUDENTS')
+    for i in range(len(sched_pred) - 1):
+        print(
+            f'\n {100 * (abs(sched_pred[i] - abs(sched_pred[i] - sched_students[i]))) / sched_pred[i]:.4f}% of strawberries predicted as {int(i + 1):.4f} to be picked is the same as students annotation')
+    print(
+        f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_students[-1]))) / sched_pred[-1]:.4f}% of strawberries predicted as last to be picked (because unripe) is the same as students annotation')
+    print('\nHEURISTIC')
+    for i in range(len(sched_pred) - 1):
+        print(
+            f'\n {100 * (abs(sched_pred[i] - abs(sched_pred[i] - sched_heuristic[i]))) / sched_pred[i]:.4f}% of strawberries predicted as {int(i + 1):.4f} to be picked is the same as heuristic')
+    print(
+        f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_heuristic[-1]))) / sched_pred[-1]:.4f}% of strawberries predicted as last to be picked (because unripe) is the same as heuristic')
+    print('\nPREDICTION VS GROUND TRUTH  (=scheduling from easiness: first is easiest, last is least easy...)')
+    for i in range(len(sched_pred) - 1):
+        print(
+            f'\n {100 * (abs(sched_pred[i] - abs(sched_pred[i] - sched_true[i]))) / sched_pred[i]:.4f}% of strawberries predicted as {int(i + 1):.4f} to be picked is the same as ground truth')
+    print(
+        f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_true[-1]))) / sched_pred[-1]:.4f}% of strawberries predicted as last to be picked (because unripe) is the same as ground truth')
 
 def draw_curve(current_epoch, cfg, lastEpoch, best_loss):
     if current_epoch != lastEpoch:
@@ -218,7 +261,7 @@ if __name__ == '__main__':
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, weight_decay=weightDecay)
     scheduler = ReduceLROnPlateau(optimizer)
-    criterion = torch.nn.BCELoss()  # weight it!! classes are imbalanced
+    criterion = torch.nn.MSELoss()  # torch.nn.BCELoss()  # weight it!! classes are imbalanced
     batchAccuracy = cfg.ACCURACY()
 
     # Parameters for plots

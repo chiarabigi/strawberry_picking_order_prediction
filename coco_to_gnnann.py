@@ -113,7 +113,7 @@ for phase in phases:
 
                 if len(true_unripe) > 0:
                     occ_unripe = [3] * len(true_unripe)
-                    sc_unripe = [-1] * len(true_unripe)
+                    sc_unripe = [18] * len(true_unripe)
                     occ_ann.extend(occ_unripe)
                     sc_ann.extend(sc_unripe)
 

@@ -5,9 +5,9 @@ from PIL import Image
 import math
 
 
-oldS = [0] * 17
-newS = [0] * 17
-easyS = [0] * 17
+oldS = [0] * 18
+newS = [0] * 18
+easyS = [0] * 18
 boxes = 0
 img_path = '/home/chiara/DATASETS/images/'
 phases = ['train', 'val', 'test']
@@ -26,7 +26,7 @@ for phase in phases:
         sc_ann = anns[g]['sc_ann']  # [:len(ripe_ann)]
         filename = anns[g]['filename']
 
-        sc_ann = sc_ann[:len(ripe_ann)]
+        # sc_ann = sc_ann[:len(ripe_ann)]
         for i in range(len(sc_ann)):
             oldS[sc_ann[i] - 1] += 1
         boxes += len(ripe_ann)
@@ -108,24 +108,27 @@ for phase in phases:
                 wo2 = all_strawberries[j]['w_half']
                 areao = all_strawberries[j]['area']
 
-                ip = distance.euclidean((xrc, yrc), (xoc, yoc))
+                ip = abs(distance.euclidean((xrc, yrc), (xoc, yoc)))
                 x = abs(float(xoc - xrc))
                 try:
-                    cosalpha = ip / x
-                    ipr = wr2 * cosalpha
-                    ior = wo2 * cosalpha
+                    cosalpha = x / ip
+                    if abs(cosalpha) > 1:
+                        print(0)
+                    ipr = abs(wr2 / cosalpha)
+                    ipo = abs(wo2 / cosalpha)
                 except ZeroDivisionError:
                     y = abs(float(yoc - yrc))
-                    sinaplha = ip / y
-                    ipr = wr2 * sinaplha
-                    ior = wo2 * sinaplha
+                    sinaplha = y / ip
+                    if abs(sinaplha) > 1:
+                        print(0)
+                    ipr = abs(wr2 / sinaplha)
+                    ipo = abs(wo2 / sinaplha)
 
-                box_dist = ip - ipr - ior  # distance between boxes
-                dist.append(box_dist)
+                box_dist = ip - ipr - ipo  # distance between boxes
                 edges.append([i, j])
 
                 # Is this strawberry occluded by another one?
-                if box_dist < 0:
+                if box_dist < 0 and (ipr != wr2 and ipo != wo2):
                     dx = min(xrmax, xomax) - max(xrmin, xomin)
                     dy = min(yrmax, yomax) - max(yrmin, yomin)
                     if (dx < 0) or (dy < 0):   # corners don't overlap
@@ -144,10 +147,13 @@ for phase in phases:
                         else:  # one inside the other
                             dx = xomax - xomin
                             dy = yomax - yomin
-                    overlap_area = dx * dy
+                    overlap_area = abs(dx) * abs(dy)
                     occlusion_fraction = overlap_area / arear
-                    ripe_info[i]['occlusion'] = 4
-                    ripe_info[i]['occlusion_by_berry%'] = occlusion_fraction
+                    if occlusion_fraction < 1:  # I shall never know why this happens
+                        ripe_info[i]['occlusion'] = 4
+                        ripe_info[i]['occlusion_by_berry%'] = occlusion_fraction
+
+                dist.append(abs(box_dist))
 
             all_ripe_min_dist.append(min(dist))
             all_ripe_min_edges.append(edges[dist.index(min(dist))])
@@ -189,16 +195,6 @@ for phase in phases:
         occ_updated = infoT['occlusion']
         occ_updated.extend([3] * len(unripe_ann))
 
-        new_gnnann.append({
-            'img_ann': anns[g]['img_ann'],
-            'sc_ann': scheduling,
-            'occ_ann': occ_updated,
-            'occ_score': occ_score,
-            'easiness': easiness,
-            # 'patches': anns[g]['patches'],
-            'unripe': anns[g]['unripe']
-        })
-
         # scheduling that prefers isolated non occluded strawberries
 
         neither = []
@@ -230,6 +226,18 @@ for phase in phases:
         for i in range(len(scheduling_script1)):
             newS[scheduling_script1[i] - 1] += 1
 
+        new_gnnann.append({
+            'img_ann': anns[g]['img_ann'],
+            'sc_ann': scheduling,  # easiness
+            'students_sc_ann': anns[g]['sc_ann'],
+            'heuristic_sc_ann': scheduling_script1,
+            'occ_ann': occ_updated,
+            'occ_score': occ_score,
+            'easiness': easiness,
+            # 'patches': anns[g]['patches'],
+            'unripe': anns[g]['unripe']
+        })
+
     ''''''
     save_path = '/home/chiara/strawberry_picking_order_prediction/dataset/easiness/data_{}/raw/gnnann.json'.format(phase)
     with open(save_path, 'w') as f:
@@ -239,6 +247,6 @@ for phase in phases:
 print('students scheduling', oldS)
 print('script1 scheduling', newS)
 print('easiness scheduling', easyS)
-print('% of similarity btw script1 and students', [100 * (newS[i] - abs(newS[i] - oldS[i])) / newS[i] for i in range(len(newS))])
-print('% of similarity btw easiness and students', [100 * (easyS[i] - abs(easyS[i] - oldS[i])) / easyS[i] for i in range(len(easyS))])
-print('% of similarity btw easiness and script1', [100 * (easyS[i] - abs(easyS[i] - newS[i])) / easyS[i] for i in range(len(easyS))])
+print('% of similarity btw script1 and students', [100 * (newS[i] - abs(newS[i] - oldS[i])) / newS[i] for i in range(len(newS) - 1)])
+print('% of similarity btw easiness and students', [100 * (easyS[i] - abs(easyS[i] - oldS[i])) / easyS[i] for i in range(len(easyS) - 1)])
+print('% of similarity btw easiness and script1', [100 * (easyS[i] - abs(easyS[i] - newS[i])) / easyS[i] for i in range(len(easyS) - 1)])

@@ -48,6 +48,32 @@ def get_realscheduling(output, label, batch):
         sx = dx
     return scheduling
 
+def get_whole_scheduling(output, label, batch):
+    sx = 0
+    batch_size = int(batch[-1]) + 1
+    sched_pred = np.zeros(18)
+    sched_true = np.zeros(18)
+    for i in range(batch_size):
+        dx = get_single_out(batch, i, sx)
+        y_pred = output[sx:dx]
+        y_lab = label[sx:dx]
+        sched = sorted(range(len(y_pred)), reverse=True, key=lambda k: y_pred[k])
+        for j in range(len(sched)):
+            sched_pred[sched[j] - 1] += 1
+        for k in range(len(y_lab)):
+            sched_true[y_lab[k] - 1] += 1
+        sx = dx
+    return sched_pred, sched_true
+
+def get_label_scheduling(label, batch):
+    batch_size = int(batch[-1]) + 1
+    sched_true = np.zeros(18)
+    for i in range(batch_size):
+        y_lab = label[i]
+        for k in range(len(y_lab)):
+            sched_true[y_lab[k] - 1] += 1
+    return sched_true
+
 
 ## For metrics
 
@@ -253,11 +279,11 @@ def distances(ripe_ann, unripe_ann):
                 dist.append(box_dist)
                 edges.append([[i, j], [j, i]])
 
-                all_feats += [box_dist, box_dist]
+                all_feats += [abs(box_dist), abs(box_dist)]
                 all_edges += [[i, j], [j, i]]
 
         if len(dist) > 0:
-            all_min_dist += [min(dist), min(dist)]
+            all_min_dist += [abs(min(dist)), abs(min(dist))]
             all_min_edges += edges[dist.index(min(dist))]
 
     return all_feats, all_edges, all_min_dist, all_min_edges
