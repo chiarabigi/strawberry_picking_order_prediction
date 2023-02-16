@@ -1,9 +1,14 @@
 # strawberry_picking_order_prediction
 using GNN 
 
-## Link for the images used in coco_to_gnnann
+## Link for the images used in coco_to_gnnann and easiness
 
 https://universityoflincoln-my.sharepoint.com/:f:/g/personal/26701596_students_lincoln_ac_uk/EidUs1e5xIRMmPLYI9tmVpcBF9xqP4B03KFErKaVEK7DyA?e=q8F3Ky
+
+## Training with easiness label
+
+True scheduling of predicted as first (TEST):  [88. 28. 11. 16.  2.  0.  3.  0.  0.  1.  0.  0.  0.  0.  0.  0.  0.]
+Occlusion property for node with higher probability (TEST):  [ 26.   9.   1. 109.   4.]
 
 ## General idea
 
