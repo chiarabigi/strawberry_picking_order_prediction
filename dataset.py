@@ -7,7 +7,7 @@ import json
 from utils import only_sides, distances
 import copy
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
 class SchedulingDataset(Dataset):
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
