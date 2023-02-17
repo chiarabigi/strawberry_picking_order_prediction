@@ -10,8 +10,13 @@ from scipy.spatial import distance
 import matplotlib.pyplot as plt
 import math
 import statistics
+from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
 
-encoder = torch.load('/home/chiara/test_encoder.pth')  # autoencoder is to be downloaded
+
+weights = EfficientNet_B0_Weights.DEFAULT
+model = efficientnet_b0(weights=weights)
+#encoder = torch.load('/home/chiara/test_encoder.pth')  # autoencoder is to be downloaded
+
 # unripe info
 unripe_path = '/home/chiara/strawberry_picking_order_prediction/dataset/unripe.json'  # obtained with detectron2 ran on GPU
 with open(unripe_path) as f:
@@ -124,12 +129,12 @@ for phase in phases:
                     occ_ann.extend(occ_unripe)
                     sc_ann.extend(sc_unripe)
 
-            '''
+            ''''''
             # add patches
             xy = torch.tensor(xy)
             x, y = xy.T
             d = transforms.ToTensor()(d)
-            m = 64  # m = 1 means a patch of 3x3 centered around given pixel location
+            m = 112  # m = 1 means a patch of 3x3 centered around given pixel location
             for p in range(len(x)):
                 if x[p] + m >= width:
                     x[p] = width - m
@@ -142,9 +147,9 @@ for phase in phases:
             o = torch.stack([d[:, yi - m: yi + m, xi - m: xi + m] for xi, yi in zip(x, y)])
             patches = []
             for a in range(len(o)):
-                encoder.eval()
-                compress = encoder(o[a].unsqueeze(0))
-                patches.append(compress.tolist())'''
+                model.eval()
+                compress = model.avgpool(model.features(o[a].unsqueeze(0))).squeeze(0).squeeze(-1).squeeze(-1)
+                patches.append(compress.tolist())
 
             gnnann.append({'img_ann': img_ann,
                            'sc_ann': sc_ann,
