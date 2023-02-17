@@ -7,7 +7,7 @@ class GCN_scheduling(torch.nn.Module):
     def __init__(self, hidden_layers, num_layers):
         super(GCN_scheduling, self).__init__()
 
-        self.nfeat = 262  # number of node features
+        self.nfeat = 1286  # number of node features
         self.nhead = 8
         self.edge_dim = 1  # size of edge feature
 
