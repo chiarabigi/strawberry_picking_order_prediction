@@ -151,7 +151,7 @@ def draw_curve(current_epoch, cfg, lastEpoch, best_loss):
     elif current_epoch == lastEpoch:
         ax.text(0.5, 0.5, 'T' + str(best_loss),
                  horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
-    fig.savefig(os.path.join('./plots/{}'.format(goal), 'train_{}_{}_{}_L2{}_{}.jpg'.format(cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
+    fig.savefig(os.path.join('./plots/'.format(goal), 'train_{}_{}_{}_L2{}_{}.jpg'.format(cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
 
 
 # Main
@@ -185,7 +185,7 @@ def train():
             # Track the best performance, and save the model's state
             if val_loss < best_vloss:
                 best_vloss = val_loss
-                model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/easiness/model_{}.pth'.format(goal, timestamp)
+                model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_{}.pth'.format(timestamp)
                 torch.save(model.state_dict(), model_path)
                 early_stopping_counter = 0
             else:
