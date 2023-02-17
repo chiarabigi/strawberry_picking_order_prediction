@@ -50,10 +50,10 @@ def train_one_epoch():
         step += 1
 
     # for loss plot
-    y_loss['train'].append(running_loss)
+    y_loss['train'].append(running_loss / step)
     print('True scheduling of predicted as first (TRAIN): ', real_scheduling)
     print('Occlusion property for node with higher probability (TRAIN): ', occ_1)
-    return running_loss
+    return running_loss / step
 
 
 def validation():
