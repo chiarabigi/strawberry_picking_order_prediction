@@ -243,11 +243,11 @@ if __name__ == '__main__':
     # Load Dataset
 
     print("Loading data_scripts...")
-    train_path = 'dataset/{}/data_train/'.format(goal)
+    train_path = 'dataset/data_train/'.format(goal)
     train_dataset = cfg.DATASET(train_path)
-    val_path = 'dataset/{}/data_val/'.format(goal)
+    val_path = 'dataset/data_val/'.format(goal)
     val_dataset = cfg.DATASET(val_path)
-    test_path = 'dataset/{}/data_test/'.format(goal)
+    test_path = 'dataset/data_test/'.format(goal)
     test_dataset = cfg.DATASET(test_path)
 
     train_loader = DataLoader(train_dataset, batch_size=batchSize, shuffle=True)  #, num_workers=2, pin_memory_device='cuda:1', pin_memory=True)

@@ -40,31 +40,27 @@ class SchedulingDataset(Dataset):
             occ = anns[index]['occ_ann']
             occ_score = anns[index]['occ_score']
             easiness = anns[index]['easiness']
-            #patches = anns[index]['patches']
-            unripe = anns[index]['unripe']
+            # patches = anns[index]['patches']
+            ripeness = anns[index]['ripeness']
             students_scheduling = anns[index]['students_sc_ann']
             heuristic_scheduling = anns[index]['heuristic_sc_ann']
             if len(box_obj) > 1:
                 # Get node features
-                node_feats = self._get_node_features(box_obj, occ_score, unripe)
+                node_feats = self._get_node_features(box_obj, occ_score, ripeness)
                 # Get edge features and adjacency info
-                edge_feats, edge_index = self.knn(box_obj, unripe)
-                # Save actual label
-                label = self._get_label(sched)
+                edge_feats, edge_index = self.knn(box_obj)
                 # Get scheduling info
                 scheduling = self._get_scheduling(sched)
-                # Get occlusion info
-                info = self._get_occlusion(occ)
 
                 # Create data object
                 data = Data(x=node_feats,
                             edge_index=edge_index,
                             edge_attr=edge_feats,
                             y=torch.tensor(easiness, dtype=torch.float32, device=device).unsqueeze(1),
-                            scheduling=scheduling,
-                            students_ann=students_scheduling,
-                            heuristic_ann=heuristic_scheduling,
-                            label=label,
+                            # scheduling=scheduling,  # 1 0 classes
+                            students_ann=torch.tensor(students_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
+                            heuristic_ann=torch.tensor(heuristic_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
+                            label=torch.tensor(sched, dtype=torch.int32, device=device).unsqueeze(1),  # gt
                             info=torch.tensor(occ, device=device).unsqueeze(1)
                             )
 
@@ -78,23 +74,15 @@ class SchedulingDataset(Dataset):
                 idx += 1
 
 
-    def _get_node_features(self, ripe, occ, unripe):
+    def _get_node_features(self, box, occ, ripenes):
         """
         This will return a matrix / 2d array of the shape
         [Number of Nodes, Node Feature size]
         """
         all_node_feats = []
-        box = copy.copy(ripe)
-        ''''''
-        if len(unripe) > 0:
-            box.extend(unripe)
 
         for a in range(len(box)):
             ''''''
-            if a < len(box) - len(unripe):
-                rip = 1
-            else:
-                rip = -1
             node_feats = []
             # Feature 0: x
             node_feats.append(box[a][0])
@@ -105,7 +93,7 @@ class SchedulingDataset(Dataset):
             # Feature 3: Height
             node_feats.append(box[a][3])
             # Feature 4: Ripeness
-            node_feats.append(rip)
+            node_feats.append(ripenes[a])
             # Feature 5: Occlusion weight
             node_feats.append(occ[a])  # the occlusion score was computed in the 'easiest' script
             # Feature 6-86: Image patch
@@ -118,12 +106,10 @@ class SchedulingDataset(Dataset):
 
         return torch.tensor(all_node_feats, dtype=torch.float32, device=device)
 
-    def knn(self, ripe, unripe):  # "k-nearest neighbour"
+    def knn(self, box):  # "k-nearest neighbour"
         # Compute all possible edges (sides + diagonals), ONCE
-        edge_feats, edge_indices, min_dist, min_edges = distances(ripe, unripe)
+        edge_feats, edge_indices, min_dist, min_edges = distances(box)
 
-        box = copy.copy(ripe)
-        box.extend(unripe)
         sides_feats, sides_indices = only_sides(edge_feats, edge_indices, box)
         # Take only diagonals
         if len(box) > 3:
@@ -162,20 +148,6 @@ class SchedulingDataset(Dataset):
                 label[i] = 0
 
         return torch.tensor(label, dtype=torch.float32, device=device).unsqueeze(1)
-
-    def _get_occlusion(self, occ):
-        occlusion_properties = ['occluded_by_leaf', 'occluding', 'occluded/occluding', 'neither', 'occluded_by_berry']
-        info=[]
-        for i in range(len(occ)):
-            info.append(occlusion_properties[occ[i]])
-        return info
-
-    def _get_label(self, sched):
-        for i in range(len(sched)):
-            if sched[i] == -1:
-                sched[i] = 18
-        return torch.tensor(sched, device=device, dtype=torch.int32).unsqueeze(1)
-
 
     def len(self):
         return len(self.anns)

@@ -35,6 +35,6 @@ class GCN_scheduling(torch.nn.Module):
         x3 = F.dropout(x2, p=0.2, training=self.training)
         x4 = self.conv2(x3, edge_index, edge_weight)
 
-        x5 = self.linear(x4)
-        x6 = self.sigmoid(x5)
+        #x5 = self.linear(x4)
+        x6 = self.sigmoid(x4)
         return x6
