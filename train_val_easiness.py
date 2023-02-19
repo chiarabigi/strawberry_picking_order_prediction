@@ -11,6 +11,7 @@ import config_scheduling
 import config_scheduling_gpu
 from utils import get_occlusion1, get_realscheduling, get_whole_scheduling, get_label_scheduling
 import multiprocessing
+from collections import Counter
 
 with torch.no_grad():
    torch.cuda.empty_cache()
@@ -23,6 +24,7 @@ def train_one_epoch():
     tot_nodes = 0.0
     step = 0
     occ_1 = np.zeros(5)
+    matches = []
     for i, batch in enumerate(train_loader, 0):
 
         # zero the parameter gradients
@@ -49,10 +51,15 @@ def train_one_epoch():
         tot_nodes += len(batch.batch)
         step += 1
 
+        outputsL = [round(x, 5) for x in outputs.t().tolist()[0]]
+        batchyL = [round(x, 5) for x in batch.y.t().tolist()[0]]
+        matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
+
+    print('Matches', sorted(Counter(matches).most_common()))
     # for loss plot
     y_loss['train'].append(running_loss / step)
-    print('True scheduling of predicted as first (TRAIN): ', real_scheduling)
-    print('Occlusion property for node with higher probability (TRAIN): ', occ_1)
+    #print('True scheduling of predicted as first (TRAIN): ', real_scheduling)
+    #print('Occlusion property for node with higher probability (TRAIN): ', occ_1)
     return running_loss / step
 
 
@@ -63,6 +70,7 @@ def validation():
     tot_vnodes = 0.0
     step = 0
     occ_1 = np.zeros(5)
+    matches = []
 
     for i, vbatch in enumerate(val_loader):
         # vbatch.to(device)
@@ -75,12 +83,17 @@ def validation():
         occ_1 += get_occlusion1(voutputs, vbatch.info, vbatch.batch)
         tot_vnodes += len(vbatch.batch)
         step += 1
+        outputsL = [round(x, 5) for x in voutputs.t().tolist()[0]]
+        batchyL = [round(x, 5) for x in vbatch.y.t().tolist()[0]]
+        matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
+
+    print('Matches', sorted(Counter(matches).most_common()))
 
     avg_vloss = running_vloss / step
 
     y_loss['val'].append(avg_vloss)
-    print('True scheduling of predicted as first (VAL): ', real_vscheduling)
-    print('Occlusion property for node with higher probability (VAL): ', occ_1)
+    #print('True scheduling of predicted as first (VAL): ', real_vscheduling)
+    #print('Occlusion property for node with higher probability (VAL): ', occ_1)
     return avg_vloss
 
 
@@ -92,6 +105,8 @@ def test():
     sched_true = np.zeros(18)
     sched_students = np.zeros(18)
     sched_heuristic = np.zeros(18)
+    storeT = []
+    storeP = []
 
     for i, tbatch in enumerate(test_loader):
         # tbatch.to(device)
@@ -103,7 +118,19 @@ def test():
         sched_heuristic += get_label_scheduling(tbatch.heuristic_ann, tbatch.batch)
         sched_pred += s_pred
         sched_true += s_true
+        storeP += [round(x, 5) for x in pred.t().tolist()[0]]
+        storeT += [round(x, 5) for x in tbatch.y.t().tolist()[0]]
 
+    wP = Counter(storeP)
+    wT = Counter(storeT)
+
+    plt.figure(2)
+    plt.bar(wP.keys(), wP.values(), width=0.0001)
+    plt.bar(wT.keys(), wT.values(), width=0.0001)
+    plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
+    plt.savefig('truetestEasiness.png')
+
+    '''
     for i in range(len(real_tscheduling) - 1):
         print(
             f'\n {100 * real_tscheduling[i] / real_tscheduling.sum():.4f}% of strawberries predicted as EASIEST TO PICK in the cluster where scheduled as {i + 1:.4f}')
@@ -139,7 +166,7 @@ def test():
         print(
             f'\n {100 * (abs(sched_pred[i] - abs(sched_pred[i] - sched_true[i]))) / sched_pred[i]:.4f}% of strawberries predicted as {int(i + 1):.4f} to be picked is the same as ground truth')
     print(
-        f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_true[-1]))) / sched_pred[-1]:.4f}% of strawberries predicted as last to be picked (because unripe) is the same as ground truth')
+        f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_true[-1]))) / sched_pred[-1]:.4f}% of strawberries predicted as last to be picked (because unripe) is the same as ground truth')'''
 
 def draw_curve(current_epoch, cfg, lastEpoch, best_loss):
     if current_epoch != lastEpoch:
@@ -273,7 +300,7 @@ if __name__ == '__main__':
     y_err['train'] = []
     y_err['val'] = []
     x_epoch = []
-    fig = plt.figure()
+    fig = plt.figure(1)
     ax = fig.add_subplot(1, 1, 1)
 
     train()

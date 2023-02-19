@@ -3,7 +3,7 @@ from model import GCN_scheduling
 from utils import BatchAccuracy_scheduling
 
 LR = 1e-3
-HL = 8
+HL = 4
 BATCHSIZE = 32
 NL = 0
 WEIGHTDECAY = 0.01

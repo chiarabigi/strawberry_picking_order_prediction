@@ -240,7 +240,10 @@ def get_occ_score(ripe_info):
     return occ_score
 
 def update_occ(ripe_info):
-    infoT = {k: [dic[k] for dic in ripe_info] for k in ripe_info[0]}
+    try:
+        infoT = {k: [dic[k] for dic in ripe_info] for k in ripe_info[0]}
+    except IndexError:
+        print(0)
     occ_updated = infoT['occlusion']
     for o in range(len(occ_updated)):
         if occ_updated[o] % 2 != 0:

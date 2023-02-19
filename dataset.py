@@ -44,32 +44,31 @@ class SchedulingDataset(Dataset):
             ripeness = anns[index]['ripeness']
             students_scheduling = anns[index]['students_sc_ann']
             heuristic_scheduling = anns[index]['heuristic_sc_ann']
-            if len(box_obj) > 1:
-                # Get node features
-                node_feats = self._get_node_features(box_obj, occ_score, ripeness)
-                # Get edge features and adjacency info
-                edge_feats, edge_index = self.knn(box_obj)
+            # Get node features
+            node_feats = self._get_node_features(box_obj, occ_score, ripeness)
+            # Get edge features and adjacency info
+            edge_feats, edge_index = self.knn(box_obj)
 
-                # Create data object
-                data = Data(x=node_feats,
-                            edge_index=edge_index,
-                            edge_attr=edge_feats,
-                            y=torch.tensor(easiness, dtype=torch.float32, device=device).unsqueeze(1),
-                            # scheduling=scheduling,  # 1 0 classes
-                            students_ann=torch.tensor(students_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
-                            heuristic_ann=torch.tensor(heuristic_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
-                            label=torch.tensor(sched, dtype=torch.int32, device=device).unsqueeze(1),  # gt
-                            info=torch.tensor(occ, device=device).unsqueeze(1)
-                            )
+            # Create data object
+            data = Data(x=node_feats,
+                        edge_index=edge_index,
+                        edge_attr=edge_feats,
+                        y=torch.tensor(easiness, dtype=torch.float32, device=device).unsqueeze(1),
+                        # scheduling=scheduling,  # 1 0 classes
+                        students_ann=torch.tensor(students_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
+                        heuristic_ann=torch.tensor(heuristic_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
+                        label=torch.tensor(sched, dtype=torch.int32, device=device).unsqueeze(1),  # gt
+                        info=torch.tensor(occ, device=device).unsqueeze(1)
+                        )
 
-                if self.pre_filter is not None and not self.pre_filter(data):
-                    continue
+            if self.pre_filter is not None and not self.pre_filter(data):
+                continue
 
-                if self.pre_transform is not None:
-                    data = self.pre_transform(data)
+            if self.pre_transform is not None:
+                data = self.pre_transform(data)
 
-                torch.save(data, osp.join(self.processed_dir, f'data_{idx}.pt'))
-                idx += 1
+            torch.save(data, osp.join(self.processed_dir, f'data_{idx}.pt'))
+            idx += 1
 
 
     def _get_node_features(self, box, occ, ripenes):

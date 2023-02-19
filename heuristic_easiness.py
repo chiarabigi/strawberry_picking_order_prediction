@@ -66,12 +66,13 @@ for phase in phases:
 
         easiness = [dist_score[e] * occ_score[e] for e in range(len(dist_score))]
 
+        ''''''
         # balance scores
         distribution = w.most_common()
         easyr = [round(x, 4) for x in easiness]
         elem = [[y for y in range(len(easyr)) if (distribution[x][0] == easyr[y] and distribution[x][1] > 2)] for x in range(len(distribution))]
         elem = [item for sublist in elem for item in sublist]
-        if len(elem) == len(easiness):
+        if len(elem) >= len(easiness) - 1:
             continue
         indices = sorted(elem, reverse=True)
         for idx in indices:
@@ -143,10 +144,10 @@ for phase in phases:
     plt.savefig('barEasiness_distributed_{}.png'.format(phase))
     easy_tot += easy
 
-    '''
+    ''''''
     save_path = base_path + 'dataset/data_{}/raw/gnnann.json'.format(phase)
     with open(save_path, 'w') as f:
-        json.dump(gnnann, f)'''
+        json.dump(gnnann, f)
     print(phase + str(len(gnnann)))
 
 
