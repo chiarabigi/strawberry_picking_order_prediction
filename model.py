@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn import GATConv, Linear, global_mean_pool, GCNConv
-from torch_geometric.utils import softmax
+from torch_geometric.nn import GATConv, Linear
 
 
 class GCN_scheduling(torch.nn.Module):
@@ -24,6 +23,7 @@ class GCN_scheduling(torch.nn.Module):
         self.linear = Linear(1, 1, bias=False, weight_initializer='glorot')
 
         self.sigmoid = torch.nn.Sigmoid()
+        self.customSigmoid = mySigmoid(2)
 
     def forward(self, data):
 
@@ -37,4 +37,14 @@ class GCN_scheduling(torch.nn.Module):
 
         #x5 = self.linear(x4)
         x6 = self.sigmoid(x4)
+        #x6 = self.customSigmoid(x4)
         return x6
+
+class mySigmoid(torch.nn.Module):
+    def __init__(self, beta):
+        super(mySigmoid, self).__init__()
+        self.beta = beta
+    def forward(self, data):
+        x = data - self.beta
+        output = 1 / (1 + torch.exp(-x))
+        return output

@@ -49,8 +49,6 @@ class SchedulingDataset(Dataset):
                 node_feats = self._get_node_features(box_obj, occ_score, ripeness)
                 # Get edge features and adjacency info
                 edge_feats, edge_index = self.knn(box_obj)
-                # Get scheduling info
-                scheduling = self._get_scheduling(sched)
 
                 # Create data object
                 data = Data(x=node_feats,

@@ -7,6 +7,7 @@ import json
 from utils import get_single_out
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import Counter
 
 gnn_path = '/home/chiara/strawberry_picking_order_prediction/dataset/data_test/raw/gnnann.json'
 with open(gnn_path) as f:
@@ -36,26 +37,21 @@ for i, tbatch in enumerate(test_loader):
     pred = model(tbatch)
     sx = 0
     batch_size = int(tbatch.batch[-1]) + 1
-    heuristic_ann = [item for sublist in tbatch.heuristic_ann for item in sublist]
-    students_ann = [item for sublist in tbatch.students_ann for item in sublist]
 
     for j in range(batch_size):
         dx = get_single_out(tbatch.batch, j, sx)
         y_occ = tbatch.info[sx:dx]
         y_gt = tbatch.label[sx:dx]
-        y_heu = heuristic_ann[sx:dx]
-        y_stud = students_ann[sx:dx]
+        y_heu = tbatch.heuristic_ann[sx:dx]
+        y_stud = tbatch.students_ann[sx:dx]
         y_pred = pred[sx:dx]
         sched = sorted(range(len(y_pred)), reverse=True, key=lambda k: y_pred[k])
 
         unripe = [x for x in y_gt if x == 18]
-        if len(unripe) > 0:
-            for s in range(len(y_gt)):
-                if sched[s] > len(sched) - len(unripe) - 1:
-                    if y_gt[s] == 18:
-                        sched[s] = 17
 
         for k in range(len(sched)):
+            if y_gt[k] == 18 and sched[k] > (len(sched) - len(unripe) - 1):
+                sched[k] = 17
             sched_true[sched[k]][y_gt[k] - 1] += 1
             sched_students[sched[k]][y_stud[k] - 1] += 1
             sched_heuristic[sched[k]][y_heu[k] - 1] += 1
@@ -93,15 +89,23 @@ for i in range(len(sched_pred) - 1):
 print(f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_true[-1]))) / sched_pred[-1]:.4f}% of strawberries predicted as last to be picked (because unripe) is the same as ground truth')
 '''
 
+w = Counter([item for sublist in pred.tolist() for item in sublist])
+plt.bar(w.keys(), w.values(), width=0.0001)
+#plt.savefig('testEasiness.png')
+
+w = Counter([item for sublist in tbatch.y.tolist() for item in sublist])
+plt.bar(w.keys(), w.values(), width=0.0001)
+plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
+plt.savefig('truetestEasiness.png')
+'''
 # Generating data for the heat map
 data = sched_true
-
 # Function to show the heat map
 fig, ax = plt.subplots()
 plt.imshow(data)
 
 # Adding details to the plot
-plt.title("2-D Heat Map")
+plt.title("Number of strawberries")
 plt.ylabel('predicted_scheduling')
 plt.xlabel('easiness_scheduling')
 
@@ -119,8 +123,8 @@ data = sched_heuristic
 fig, ax = plt.subplots()
 plt.imshow(data)
 # Adding details to the plot
-plt.title("2-D Heat Map")
-plt.ylabel('predicted_scheduling')
+plt.title("Number of strawberries")
+plt.ylabel('scheduling order predicted')
 plt.xlabel('heuristic_scheduling')
 plt.colorbar()
 for i in range(len(sched_heuristic)):
@@ -136,8 +140,8 @@ data = sched_students
 fig, ax = plt.subplots()
 plt.imshow(data)
 # Adding details to the plot
-plt.title("2-D Heat Map")
-plt.ylabel('predicted_scheduling')
+plt.title("Number of strawberries")
+plt.ylabel('scheduling order predicted')
 plt.xlabel('students_scheduling')
 plt.colorbar()
 for i in range(len(sched_students)):
@@ -153,9 +157,9 @@ data = occ_1
 fig, ax = plt.subplots()
 plt.imshow(data)
 # Adding details to the plot
-plt.title("Occlusion of prediction for scheduling order")
-plt.xlabel('predicted_scheduling')
-plt.ylabel('occlusion_label')
+plt.title("Occlusion property")
+plt.xlabel('scheduling order predicted')
+plt.ylabel('occlusion label')
 # Show all ticks and label them with the respective list entries
 occlusions = ['NON', ' BY LEAF', 'BY BERRY', 'UNRIPE']
 ax.set_yticks(np.arange(len(occlusions)), labels=occlusions)
@@ -167,3 +171,4 @@ for i in range(len(occ_1)):
 
 # Displaying the plot
 plt.savefig('heatmapOcclusions.png')
+'''

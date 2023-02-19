@@ -3,6 +3,8 @@ import random
 import numpy as np
 from PIL import Image
 import math
+import matplotlib.pyplot as plt
+from collections import Counter
 from utils import get_single_out, true_unripe, get_info, min_str_dist, get_dist_score, get_occ_score, update_occ, heuristic_sched, get_sched, get_patches
 
 base_path = '/home/chiara/strawberry_picking_order_prediction/'
@@ -13,7 +15,7 @@ unripe_path = base_path + 'dataset/unripe.json'  # obtained with detectron2 ran 
 with open(unripe_path) as f:
     unripe_annT = json.load(f)
 unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}
-
+easy = []
 phases = ['train', 'val', 'test']
 for phase in phases:
     filepath = base_path +  'scheduling/data_{}/raw/gnnann.json'.format(phase)
@@ -88,10 +90,7 @@ for phase in phases:
         random.shuffle(order)
         boxes = [boxes[j] for j in order]
         ripeness = [ripeness[j] for j in order]
-        try:
-            scheduling_easiness = [scheduling_easiness[k] for k in order]
-        except IndexError:
-            print(0)
+        scheduling_easiness = [scheduling_easiness[k] for k in order]
         sched = [sched[k] for k in order]
         scheduling_heuristic = [scheduling_heuristic[k] for k in order]
         occ_ann = [occ_ann[h] for h in order]
@@ -114,8 +113,16 @@ for phase in phases:
             'ripeness': ripeness
         })
 
+        easy += [round(x, 4) for x in easiness]
+        easy1 = [x for x in easiness if x > 1]
+
+    '''
     save_path = base_path + 'dataset/data_{}/raw/gnnann.json'.format(phase)
     with open(save_path, 'w') as f:
         json.dump(gnnann, f)
-    print(phase + str(len(gnnann)))
+    print(phase + str(len(gnnann)))'''
 
+one = 1
+w = Counter(easy)
+plt.bar(w.keys(), w.values(), width=0.001)
+plt.savefig('barEasiness.png')
