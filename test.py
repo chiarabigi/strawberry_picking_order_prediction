@@ -23,7 +23,7 @@ test_loader = DataLoader(test_dataset, batch_size=len(test_dataset),
 model = GCN_scheduling(8, 0)
 
 
-model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230218_122931.pth'
+model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230219_135153.pth'
 model.load_state_dict(torch.load(model_path))
 model.eval()
 all_real_tscheduling = np.zeros((18, 18))

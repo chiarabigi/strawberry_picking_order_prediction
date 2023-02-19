@@ -15,9 +15,11 @@ unripe_path = base_path + 'dataset/unripe.json'  # obtained with detectron2 ran 
 with open(unripe_path) as f:
     unripe_annT = json.load(f)
 unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}
-easy = []
+easy_tot = []
+w = Counter([])
 phases = ['train', 'val', 'test']
 for phase in phases:
+    easy = []
     filepath = base_path +  'scheduling/data_{}/raw/gnnann.json'.format(phase)
     gnnann = []
     json_path = base_path + 'dataset/instances_{}.json'.format(phase)
@@ -63,6 +65,28 @@ for phase in phases:
         occ_score = get_occ_score(ripe_info)
 
         easiness = [dist_score[e] * occ_score[e] for e in range(len(dist_score))]
+
+        # balance scores
+        distribution = w.most_common()
+        easyr = [round(x, 4) for x in easiness]
+        elem = [[y for y in range(len(easyr)) if (distribution[x][0] == easyr[y] and distribution[x][1] > 2)] for x in range(len(distribution))]
+        elem = [item for sublist in elem for item in sublist]
+        if len(elem) == len(easiness):
+            continue
+        indices = sorted(elem, reverse=True)
+        for idx in indices:
+            easiness.pop(idx)
+            ripe.pop(idx)
+            ripe_info.pop(idx)
+            min_dist_ripe.pop(idx)
+            occ.pop(idx)
+            occ_score.pop(idx)
+            dist_score.pop(idx)
+            xy.pop(idx)
+            sched.pop(idx)
+
+        easy += [round(x, 4) for x in easiness]
+        w = Counter(easy)
 
         scheduling_easiness = sorted(range(len(easiness)), reverse=True, key=lambda k: easiness[k])
         scheduling_easiness = [x + 1 for x in scheduling_easiness]
@@ -113,16 +137,16 @@ for phase in phases:
             'ripeness': ripeness
         })
 
-        easy += [round(x, 4) for x in easiness]
-        easy1 = [x for x in easiness if x > 1]
+    one = 1
+    w = Counter(easy)
+    plt.bar(w.keys(), w.values(), width=0.001)
+    plt.savefig('barEasiness_distributed_{}.png'.format(phase))
+    easy_tot += easy
 
     '''
     save_path = base_path + 'dataset/data_{}/raw/gnnann.json'.format(phase)
     with open(save_path, 'w') as f:
-        json.dump(gnnann, f)
-    print(phase + str(len(gnnann)))'''
+        json.dump(gnnann, f)'''
+    print(phase + str(len(gnnann)))
 
-one = 1
-w = Counter(easy)
-plt.bar(w.keys(), w.values(), width=0.001)
-plt.savefig('barEasiness.png')
+

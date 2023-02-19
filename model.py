@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GATConv, Linear
+from customLeaky import CustomLeakyReLU
 
 
 class GCN_scheduling(torch.nn.Module):
@@ -24,6 +25,7 @@ class GCN_scheduling(torch.nn.Module):
 
         self.sigmoid = torch.nn.Sigmoid()
         self.customSigmoid = mySigmoid(2)
+        self.customleaky = CustomLeakyReLU()
 
     def forward(self, data):
 
@@ -36,9 +38,10 @@ class GCN_scheduling(torch.nn.Module):
         x4 = self.conv2(x3, edge_index, edge_weight)
 
         #x5 = self.linear(x4)
-        x6 = self.sigmoid(x4)
-        #x6 = self.customSigmoid(x4)
-        return x6
+        #x5 = self.sigmoid(x4)
+        #x5 = self.customSigmoid(x4)
+        x5 = self.customleaky(x4)
+        return x5
 
 class mySigmoid(torch.nn.Module):
     def __init__(self, beta):
