@@ -51,11 +51,12 @@ def train_one_epoch():
         tot_nodes += len(batch.batch)
         step += 1
 
-        outputsL = [round(x, 5) for x in outputs.t().tolist()[0]]
-        batchyL = [round(x, 5) for x in batch.y.t().tolist()[0]]
+        outputsL = [round(x, 3) for x in outputs.t().tolist()[0]]
+        batchyL = [round(x, 3) for x in batch.y.t().tolist()[0]]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
 
-    print('Matches', sorted(Counter(matches).most_common()))
+    print('Matches TRAIN', sorted(Counter(matches).most_common()))
+    print('% guessed TRAIN:', 100 * sum(Counter(matches).values()) / tot_nodes)
     # for loss plot
     y_loss['train'].append(running_loss / step)
     #print('True scheduling of predicted as first (TRAIN): ', real_scheduling)
@@ -83,11 +84,12 @@ def validation():
         occ_1 += get_occlusion1(voutputs, vbatch.info, vbatch.batch)
         tot_vnodes += len(vbatch.batch)
         step += 1
-        outputsL = [round(x, 5) for x in voutputs.t().tolist()[0]]
-        batchyL = [round(x, 5) for x in vbatch.y.t().tolist()[0]]
+        outputsL = [round(x, 3) for x in voutputs.t().tolist()[0]]
+        batchyL = [round(x, 3) for x in vbatch.y.t().tolist()[0]]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
 
-    print('Matches', sorted(Counter(matches).most_common()))
+    print('Matches VAL', sorted(Counter(matches).most_common()))
+    print('% guessed VAL:', 100 * sum(Counter(matches).values()) / tot_vnodes)
 
     avg_vloss = running_vloss / step
 
@@ -118,8 +120,8 @@ def test():
         sched_heuristic += get_label_scheduling(tbatch.heuristic_ann, tbatch.batch)
         sched_pred += s_pred
         sched_true += s_true
-        storeP += [round(x, 5) for x in pred.t().tolist()[0]]
-        storeT += [round(x, 5) for x in tbatch.y.t().tolist()[0]]
+        storeP += [round(x, 3) for x in pred.t().tolist()[0]]
+        storeT += [round(x, 3) for x in tbatch.y.t().tolist()[0]]
 
     wP = Counter(storeP)
     wT = Counter(storeT)

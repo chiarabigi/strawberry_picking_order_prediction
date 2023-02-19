@@ -34,9 +34,9 @@ class GCN_scheduling(torch.nn.Module):
         x1 = self.conv1(x, edge_index, edge_weight)  # new node features
         x2 = F.elu(x1)
 
-        x3 = F.dropout(x2, p=0.2, training=self.training)
-        x4 = self.conv2(x3, edge_index, edge_weight)
 
+        x3 = self.conv2(x2, edge_index, edge_weight)
+        x4 = F.dropout(x3, p=0.2, training=self.training)
         #x5 = self.linear(x4)
         #x5 = self.sigmoid(x4)
         #x5 = self.customSigmoid(x4)

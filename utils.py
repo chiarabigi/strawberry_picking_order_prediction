@@ -234,9 +234,9 @@ def get_occ_score(ripe_info):
         if occ == 1 or occ == 3:  # non occluded OR occluding
             occ_score.append(1)
         elif occ == 0 or occ == 2:  # occluded by leaf OR occluding and occluded by leaf
-            occ_score.append(0.9)
+            occ_score.append(0.6)
         else:  # occluded by berry
-            occ_score.append(0.7 * (1 - ripe_info[r]['occlusion_by_berry%']))
+            occ_score.append(0.5 * (1 - ripe_info[r]['occlusion_by_berry%']))
     return occ_score
 
 def update_occ(ripe_info):
