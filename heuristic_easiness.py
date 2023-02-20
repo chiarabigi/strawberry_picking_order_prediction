@@ -33,12 +33,11 @@ for phase in phases:
     images = {k: [dic[k] for dic in imagesT] for k in imagesT[0]}
     annsT = json_file['annotations']
     anns = {k: [dic[k] for dic in annsT] for k in annsT[0]}
-    anns_sched = get_sched(anns['caption'])
 
     sx = 0
     for i in range(len(images['id'])):
         filename = images['file_name'][i]
-        d = Image.open(img_path + filename)
+        d = Image.open(img_path + filename.split('_')[-1])
         width, height = d.size
         diag = math.sqrt(math.pow(width, 2) + math.pow(height, 2))
 
@@ -46,8 +45,8 @@ for phase in phases:
 
         ripe = anns['bbox'][sx:dx]
         occ = anns['category_id'][sx:dx]
-        sched = anns_sched[sx:dx]
-        tot_unripe = unripe_ann['bboxes'][i][sx:dx]
+        sched = anns['segmentation'][sx:dx]
+        tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes'])) if unripe_ann['file_name'][x] == filename.split('_')[-1]][0]
         sx = dx
         if len(tot_unripe) > 0:
             unripe = true_unripe(tot_unripe, ripe)
@@ -112,8 +111,8 @@ for phase in phases:
 
         scheduling_easiness.extend([18] * len(unripe))
         easiness.extend([0] * len(unripe))
-        occ_ann.extend([3] * len(unripe))
-        occ_leaf.extend([3] * len(unripe))
+        occ_ann.extend([0] * len(unripe))
+        occ_leaf.extend([0] * len(unripe))
         scheduling_heuristic.extend([18] * len(unripe))
         sched.extend([18] * len(unripe))
         ripeness = [1] * len(ripe) + [0] * len(unripe)
@@ -127,7 +126,10 @@ for phase in phases:
         boxes = [boxes[j] for j in order]
         coord = [coord[j] for j in order]
         ripeness = [ripeness[j] for j in order]
-        scheduling_easiness = [scheduling_easiness[k] for k in order]
+        try:
+            scheduling_easiness = [scheduling_easiness[k] for k in order]
+        except IndexError:
+            print(0)
         sched = [sched[k] for k in order]
         scheduling_heuristic = [scheduling_heuristic[k] for k in order]
         occ_ann = [occ_ann[h] for h in order]
@@ -165,7 +167,7 @@ for phase in phases:
     save_path = base_path + 'dataset/data_{}/raw/gnnann.json'.format(phase)
     with open(save_path, 'w') as f:
         json.dump(gnnann, f)
-    print(phase + str(len(gnnann)))  # train784', val123, test118
+    print(phase + str(len(gnnann)))  # train784, val123, test118
 
 
 

@@ -15,7 +15,7 @@ class CustomLeakyReLU(torch.nn.Module):
     negative_slope: float
     positive_slope: float
 
-    def __init__(self, positive_slope: float = 1.4, negative_slope: float = 0.01, intercept: float = -0.01) -> None:
+    def __init__(self, positive_slope: float = 1.5, negative_slope: float = 0.01, intercept: float = -0.01) -> None:
         super(CustomLeakyReLU, self).__init__()
         self.positive_slope = positive_slope
         self.negative_slope = negative_slope
@@ -25,7 +25,7 @@ class CustomLeakyReLU(torch.nn.Module):
         return leaky_relu(input, self.positive_slope, self.negative_slope, self.intercept)
 
 
-def leaky_relu(input: Tensor, positive_slope: float = 1.4, negative_slope: float = 0.01, intercept: float = -0.01) -> Tensor:
+def leaky_relu(input: Tensor, positive_slope: float = 1.5, negative_slope: float = 0.01, intercept: float = -0.01) -> Tensor:
 
     result = negative_slope * torch.minimum(intercept * torch.ones_like(input), input) + positive_slope * torch.maximum(intercept * torch.ones_like(input), input)  # + intercept * torch.ones_like(input)
 
