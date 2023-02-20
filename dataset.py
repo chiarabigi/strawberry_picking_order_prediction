@@ -35,17 +35,19 @@ class SchedulingDataset(Dataset):
         anns=self.anns
         for index in range(len(anns)):
             # Read data from `raw_path`.
-            box_obj = anns[index]['img_ann']
+            box_obj = anns[index]['boxes']
+            coord = anns[index]['img_ann']
             sched = anns[index]['sc_ann']
             occ = anns[index]['occ_ann']
             occ_score = anns[index]['occ_score']
+            occ_leaf = anns[index]['occ_leaf']
             easiness = anns[index]['easiness']
-            # patches = anns[index]['patches']
+            patches = anns[index]['patches']
             ripeness = anns[index]['ripeness']
             students_scheduling = anns[index]['students_sc_ann']
             heuristic_scheduling = anns[index]['heuristic_sc_ann']
             # Get node features
-            node_feats = self._get_node_features(box_obj, occ_score, ripeness)
+            node_feats = self._get_node_features(coord, occ_score, ripeness, occ_leaf, patches)
             # Get edge features and adjacency info
             edge_feats, edge_index = self.knn(box_obj)
 
@@ -71,7 +73,7 @@ class SchedulingDataset(Dataset):
             idx += 1
 
 
-    def _get_node_features(self, box, occ, ripenes):
+    def _get_node_features(self, box, occ, ripenes, occ_leaf, patches):
         """
         This will return a matrix / 2d array of the shape
         [Number of Nodes, Node Feature size]
@@ -80,6 +82,10 @@ class SchedulingDataset(Dataset):
 
         for a in range(len(box)):
             ''''''
+            if len(patches) > 0:
+                patchesa = patches[a]
+            else:
+                patchesa = patches
             node_feats = []
             # Feature 0: x
             node_feats.append(box[a][0])
@@ -91,10 +97,12 @@ class SchedulingDataset(Dataset):
             # node_feats.append(box[a][3])
             # Feature 4: Ripeness
             node_feats.append(ripenes[a])
-            # Feature 5: Occlusion weight
+            # Feature 5: Occlusion berry %
             node_feats.append(occ[a])  # the occlusion score was computed in the 'easiest' script
+            # Feature 6: Occlusion leaf
+            node_feats.append(occ_leaf[a])
             # Feature 6-86: Image patch
-            # node_feats.extend(patches[a])
+            node_feats.extend(patchesa)
 
             # Append node features to matrix
             all_node_feats.append(node_feats)

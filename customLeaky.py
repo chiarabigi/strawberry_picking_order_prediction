@@ -27,6 +27,6 @@ class CustomLeakyReLU(torch.nn.Module):
 
 def leaky_relu(input: Tensor, positive_slope: float = 0.1, negative_slope: float = 1.5, intercept: float = 0.1) -> Tensor:
 
-    result = negative_slope * torch.minimum(torch.zeros_like(input), input) + positive_slope * torch.maximum(torch.zeros_like(input), input)  # + intercept * torch.ones_like(input)
+    result = negative_slope * torch.minimum(intercept * torch.ones_like(input), input) + positive_slope * torch.maximum(intercept * torch.ones_like(input), input)  # + intercept * torch.ones_like(input)
 
     return result

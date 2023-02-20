@@ -1,4 +1,5 @@
 import json
+import torch
 import random
 import numpy as np
 from PIL import Image
@@ -6,6 +7,9 @@ import math
 import matplotlib.pyplot as plt
 from collections import Counter
 from utils import get_single_out, true_unripe, get_info, min_str_dist, get_dist_score, get_occ_score, update_occ, heuristic_sched, get_sched, get_patches
+
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+print(device)
 
 base_path = '/home/chiara/strawberry_picking_order_prediction/'
 img_path = '/home/chiara/DATASETS/images/'   # images are to be downloaded
@@ -20,9 +24,9 @@ w = Counter([])
 phases = ['train', 'val', 'test']
 for phase in phases:
     easy = []
-    filepath = base_path +  'scheduling/data_{}/raw/gnnann.json'.format(phase)
+    filepath = base_path + 'scheduling/data_{}/raw/gnnann.json'.format(phase)
     gnnann = []
-    json_path = base_path + 'dataset/instances_{}.json'.format(phase)
+    json_path = base_path + 'dataset/isamesize_{}.json'.format(phase)
     with open(json_path) as f:
         json_file = json.load(f)
     imagesT = json_file['images']
@@ -46,7 +50,7 @@ for phase in phases:
         tot_unripe = unripe_ann['bboxes'][i][sx:dx]
         sx = dx
         if len(tot_unripe) > 0:
-            unripe = true_unripe(tot_unripe, ripe, diag)
+            unripe = true_unripe(tot_unripe, ripe)
             occ.extend([3] * len(unripe))
             unripe_info = get_info(unripe, occ)
         else:
@@ -61,12 +65,14 @@ for phase in phases:
         xy = list(map(list, zip(*[[int(x) for x in ripe_infoT['xc']], [int(y) for y in ripe_infoT['yc']]])))
         ripe_info = ripe_info[:len_ripe_info]
 
-        dist_score = get_dist_score(min_dist_ripe, diag)
+        dist_score = get_dist_score(min_dist_ripe, diag / 2)
         occ_score = get_occ_score(ripe_info)
 
         easiness = [dist_score[e] * occ_score[e] for e in range(len(dist_score))]
 
-        ''''''
+        occ_score = ripe_infoT['occlusion_by_berry%']
+
+        '''
         # balance scores
         distribution = w.most_common()
         easyr = [round(x, 4) for x in easiness]
@@ -84,7 +90,7 @@ for phase in phases:
             occ_score.pop(idx)
             dist_score.pop(idx)
             xy.pop(idx)
-            sched.pop(idx)
+            sched.pop(idx)'''
 
         easy += [round(x, 4) for x in easiness]
         w = Counter(easy)
@@ -95,46 +101,55 @@ for phase in phases:
         scheduling_heuristic = heuristic_sched(min_dist_ripe, occ)
 
         occ_ann = update_occ(ripe_info)
-
-        # scale bbox
-        ripe = [[x / diag for x in r] for r in ripe]
-        unripe = [[x / diag for x in u] for u in unripe]
+        occ_leaf = [1] * len(occ_ann)
+        for x in range(len(occ_ann)):
+            if occ_ann[x] != 1:
+                occ_leaf[x]= 0
 
         scheduling_easiness.extend([18] * len(unripe))
         easiness.extend([0] * len(unripe))
-        occ_score.extend([1] * len(unripe))
         occ_ann.extend([3] * len(unripe))
+        occ_leaf.extend([3] * len(unripe))
         scheduling_heuristic.extend([18] * len(unripe))
         sched.extend([18] * len(unripe))
         ripeness = [1] * len(ripe) + [0] * len(unripe)
+
+        coordT = [ripe_infoT['xmin'], ripe_infoT['ymin']]
+        coord = [[coordT[0][i], coordT[1][i]] for i in range(len(coordT[0]))]
         boxes = ripe
         boxes.extend(unripe)
 
         # shuffle
-        order = np.arange(0, len(boxes))
+        order = np.arange(0, len(coord))
         random.shuffle(order)
         boxes = [boxes[j] for j in order]
+        coord = [coord[j] for j in order]
         ripeness = [ripeness[j] for j in order]
         scheduling_easiness = [scheduling_easiness[k] for k in order]
         sched = [sched[k] for k in order]
         scheduling_heuristic = [scheduling_heuristic[k] for k in order]
         occ_ann = [occ_ann[h] for h in order]
-        occ_score = [occ_score[h] for h in order]
+        occ_leaf = [occ_leaf[h] for h in order]
         easiness = [easiness[h] for h in order]
         xy = [xy[n] for n in order]
 
         # patches
-        # patches = get_patches(xy, d)
+        if device.type == 'cpu':
+            patches = []
+        else:
+            patches = get_patches(xy, d)
 
         gnnann.append({
-            'img_ann': boxes,
+            'img_ann': coord,
+            'boxes': boxes,
             'sc_ann': scheduling_easiness,
             'students_sc_ann': sched,
             'heuristic_sc_ann': scheduling_heuristic,
             'occ_ann': occ_ann,
             'occ_score': occ_score,
+            'occ_leaf': occ_score,
             'easiness': easiness,
-            # 'patches': patches,
+            'patches': patches,
             'ripeness': ripeness
         })
 
@@ -148,6 +163,7 @@ for phase in phases:
     save_path = base_path + 'dataset/data_{}/raw/gnnann.json'.format(phase)
     with open(save_path, 'w') as f:
         json.dump(gnnann, f)
-    print(phase + str(len(gnnann)))
+    print(phase + str(len(gnnann)))  # train784', val123, test118
+
 
 

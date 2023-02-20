@@ -29,18 +29,18 @@ def get_sched(caption):
     return sched
 
 ## For annotations
-def overlap(bbox1, bbox2, diag):
+def overlap(bbox1, bbox2):
     x1c = bbox1[0] + bbox1[2] / 2
     y1c = bbox1[1] + bbox1[3] / 2
     x2c = bbox2[0] + bbox2[2] / 2
     y2c = bbox2[1] + bbox2[3] / 2
     L = distance.euclidean((x1c, y1c), (x2c, y2c))
-    if L < 30 / diag:
+    if L < 30:
         return True
     else:
         return False
 
-def true_unripe(boxes, ripe, diag):
+def true_unripe(boxes, ripe):
     unripe = []
     for i in range(len(boxes)):
         box = boxes[i]
@@ -51,7 +51,7 @@ def true_unripe(boxes, ripe, diag):
         box1 = [xmin, ymin, w, h]
         add = True
         for box2 in ripe:
-            if overlap(box1, box2, diag):
+            if overlap(box1, box2):
                 add = False
         if add:
             unripe.append(box1)
@@ -127,7 +127,7 @@ def min_str_dist(all_strawberries, check_berry_occlusion):
         'dist': all_feats,
         'min_dist': all_min_dist,
         'edges': all_edges,
-        'min_edges':all_min_edges
+        'min_edges': all_min_edges
     }
     for i in range(len(all_strawberries)):
 
@@ -215,6 +215,15 @@ def min_str_dist(all_strawberries, check_berry_occlusion):
             all_min_dist += [abs(min(dist))]
             all_min_edges += edges[dist.index(min(dist))]
 
+    ''''''
+    max_dist = 1245
+    all_min_dist = [x / max_dist for x in all_min_dist]
+    all_feats = [x / max_dist for x in all_feats]
+    if check_berry_occlusion:
+        for b in all_strawberries:
+            b['xmin'] = b['xmin'] / max_dist
+            b['ymin'] = b['ymin'] / max_dist
+
     return all_dist
 
 
@@ -224,7 +233,7 @@ def get_dist_score(all_ripe_min_dist, diag):
         dist_score.append(1)
     else:
         for d in range(len(all_ripe_min_dist)):
-            dist_score.append(all_ripe_min_dist[d] / diag)
+            dist_score.append(1245 * all_ripe_min_dist[d] / diag)
     return dist_score
 
 def get_occ_score(ripe_info):
@@ -247,11 +256,11 @@ def update_occ(ripe_info):
     occ_updated = infoT['occlusion']
     for o in range(len(occ_updated)):
         if occ_updated[o] % 2 != 0:
-            occ_updated[o] = 0
+            occ_updated[o] = 0  # non occluded
         elif occ_updated[o] == 4:
-            occ_updated[o] = 2
+            occ_updated[o] = 2  # occluded by berry
         else:
-            occ_updated[o] = 1
+            occ_updated[o] = 1  # occluded by leaf
     return occ_updated
 
 def heuristic_sched(all_ripe_min_dist, occ_ann):
