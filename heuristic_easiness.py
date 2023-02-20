@@ -65,7 +65,10 @@ for phase in phases:
         xy = list(map(list, zip(*[[int(x) for x in ripe_infoT['xc']], [int(y) for y in ripe_infoT['yc']]])))
         ripe_info = ripe_info[:len_ripe_info]
 
-        dist_score = get_dist_score(min_dist_ripe, diag / 2)
+        coordT = [ripe_infoT['xmin'], ripe_infoT['ymin']]
+        coord = [[coordT[0][i], coordT[1][i]] for i in range(len(coordT[0]))]
+
+        dist_score = get_dist_score(min_dist_ripe)
         occ_score = get_occ_score(ripe_info)
 
         easiness = [dist_score[e] * occ_score[e] for e in range(len(dist_score))]
@@ -76,7 +79,7 @@ for phase in phases:
         # balance scores
         distribution = w.most_common()
         easyr = [round(x, 4) for x in easiness]
-        elem = [[y for y in range(len(easyr)) if (distribution[x][0] == easyr[y] and distribution[x][1] > 2)] for x in range(len(distribution))]
+        elem = [[y for y in range(len(easyr)) if (distribution[x][0] == easyr[y] and distribution[x][1] > 5)] for x in range(len(distribution))]
         elem = [item for sublist in elem for item in sublist]
         if len(elem) >= len(easiness) - 1:
             continue
@@ -90,7 +93,8 @@ for phase in phases:
             occ_score.pop(idx)
             dist_score.pop(idx)
             xy.pop(idx)
-            sched.pop(idx)'''
+            sched.pop(idx)
+            coord.pop(idx)'''
 
         easy += [round(x, 4) for x in easiness]
         w = Counter(easy)
@@ -114,8 +118,6 @@ for phase in phases:
         sched.extend([18] * len(unripe))
         ripeness = [1] * len(ripe) + [0] * len(unripe)
 
-        coordT = [ripe_infoT['xmin'], ripe_infoT['ymin']]
-        coord = [[coordT[0][i], coordT[1][i]] for i in range(len(coordT[0]))]
         boxes = ripe
         boxes.extend(unripe)
 
@@ -156,7 +158,7 @@ for phase in phases:
     one = 1
     w = Counter(easy)
     plt.bar(w.keys(), w.values(), width=0.001)
-    plt.savefig('barEasiness_distributed_{}.png'.format(phase))
+    plt.savefig('imgs/barEasiness_distributed_traintestval.png'.format(phase))
     easy_tot += easy
 
     ''''''

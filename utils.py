@@ -123,12 +123,6 @@ def min_str_dist(all_strawberries, check_berry_occlusion):
     all_min_edges = []
     all_feats = []
     all_edges = []
-    all_dist = {
-        'dist': all_feats,
-        'min_dist': all_min_dist,
-        'edges': all_edges,
-        'min_edges': all_min_edges
-    }
     for i in range(len(all_strawberries)):
 
         if check_berry_occlusion:
@@ -203,7 +197,7 @@ def min_str_dist(all_strawberries, check_berry_occlusion):
                         occlusion_fraction = overlap_area / arear
                         if occlusion_fraction < 1:  # I shall never know why this happens
                             all_strawberries[i]['occlusion'] = 4
-                            all_strawberries[i]['occlusion_by_berry%'] = occlusion_fraction
+                            all_strawberries[i]['occlusion_by_berry%'] = 1 - occlusion_fraction
 
                 dist.append(abs(box_dist))
                 edges.append([[i, j], [j, i]])
@@ -224,16 +218,22 @@ def min_str_dist(all_strawberries, check_berry_occlusion):
             b['xmin'] = b['xmin'] / max_dist
             b['ymin'] = b['ymin'] / max_dist
 
+    all_dist = {
+        'dist': all_feats,
+        'min_dist': all_min_dist,
+        'edges': all_edges,
+        'min_edges': all_min_edges
+    }
     return all_dist
 
 
-def get_dist_score(all_ripe_min_dist, diag):
+def get_dist_score(all_ripe_min_dist):
     dist_score = []
     if len(all_ripe_min_dist) == 1:
         dist_score.append(1)
     else:
         for d in range(len(all_ripe_min_dist)):
-            dist_score.append(1245 * all_ripe_min_dist[d] / diag)
+            dist_score.append(all_ripe_min_dist[d])
     return dist_score
 
 def get_occ_score(ripe_info):
@@ -243,9 +243,9 @@ def get_occ_score(ripe_info):
         if occ == 1 or occ == 3:  # non occluded OR occluding
             occ_score.append(1)
         elif occ == 0 or occ == 2:  # occluded by leaf OR occluding and occluded by leaf
-            occ_score.append(0.6)
+            occ_score.append(0.7)
         else:  # occluded by berry
-            occ_score.append(0.5 * (1 - ripe_info[r]['occlusion_by_berry%']))
+            occ_score.append(0.7*(ripe_info[r]['occlusion_by_berry%']))
     return occ_score
 
 def update_occ(ripe_info):

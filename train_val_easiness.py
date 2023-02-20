@@ -25,6 +25,8 @@ def train_one_epoch():
     step = 0
     occ_1 = np.zeros(5)
     matches = []
+    storeP = []
+    storeT = []
     for i, batch in enumerate(train_loader, 0):
 
         # zero the parameter gradients
@@ -51,14 +53,24 @@ def train_one_epoch():
         tot_nodes += len(batch.batch)
         step += 1
 
-        outputsL = [round(x, 3) for x in outputs.t().tolist()[0]]
-        batchyL = [round(x, 3) for x in batch.y.t().tolist()[0]]
+        storeP += outputs.t().tolist()[0]
+        storeT += batch.y.t().tolist()[0]
+        outputsL = [round(x, 2) for x in outputs.t().tolist()[0]]
+        batchyL = [round(x, 2) for x in batch.y.t().tolist()[0]]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
 
     print('\n Matches TRAIN', sorted(Counter(matches).most_common()))
-    print('% guessed TRAIN:', 100 * sum(Counter(matches).values()) / tot_nodes)
+    print(f'\n% guessed TRAIN: {100 * sum(Counter(matches).values()) / tot_nodes:.4f}, \twith: {len(Counter(matches).most_common()):.4f} different scores')
+    print(f'\ntot pred < 0 TRAIN: {len([x for x in Counter(matches).keys() if x < 0]):.4f}, \t == 0: {len([x for x in Counter(matches).keys() if x == 0]):.4f}')
     # for loss plot
     y_loss['train'].append(running_loss / step)
+    wP = Counter(storeP)
+    wT = Counter(storeT)
+
+    plt.bar(wP.keys(), wP.values(), width=0.0001)
+    plt.bar(wT.keys(), wT.values(), width=0.0001)
+    plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
+    plt.savefig('imgs/truetrainEasiness.png')
     #print('True scheduling of predicted as first (TRAIN): ', real_scheduling)
     #print('Occlusion property for node with higher probability (TRAIN): ', occ_1)
     return running_loss / step
@@ -72,6 +84,8 @@ def validation():
     step = 0
     occ_1 = np.zeros(5)
     matches = []
+    storeT = []
+    storeP = []
 
     for i, vbatch in enumerate(val_loader):
         # vbatch.to(device)
@@ -84,16 +98,25 @@ def validation():
         occ_1 += get_occlusion1(voutputs, vbatch.info, vbatch.batch)
         tot_vnodes += len(vbatch.batch)
         step += 1
-        outputsL = [round(x, 3) for x in voutputs.t().tolist()[0]]
-        batchyL = [round(x, 3) for x in vbatch.y.t().tolist()[0]]
+        storeT += vbatch.y.t().tolist()[0]
+        storeP += voutputs.t().tolist()[0]
+        outputsL = [round(x, 2) for x in voutputs.t().tolist()[0]]
+        batchyL = [round(x, 2) for x in vbatch.y.t().tolist()[0]]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
 
     print('Matches VAL', sorted(Counter(matches).most_common()))
-    print('% guessed VAL:', 100 * sum(Counter(matches).values()) / tot_vnodes)
-
+    print(f'\n% guessed VAL: {100 * sum(Counter(matches).values()) / tot_vnodes:.4f}, \twith: {len(Counter(matches).most_common()):.4f} different scores')
+    print(f'\ntot pred < 0 VAL: {len([x for x in Counter(matches).keys() if x < 0]):.4f}, \t == 0: {len([x for x in Counter(matches).keys() if x == 0]):.4f}')
     avg_vloss = running_vloss / step
 
     y_loss['val'].append(avg_vloss)
+    wP = Counter(storeP)
+    wT = Counter(storeT)
+
+    plt.bar(wP.keys(), wP.values(), width=0.0001)
+    plt.bar(wT.keys(), wT.values(), width=0.0001)
+    plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
+    plt.savefig('imgs/truevalEasiness.png')
     #print('True scheduling of predicted as first (VAL): ', real_vscheduling)
     #print('Occlusion property for node with higher probability (VAL): ', occ_1)
     return avg_vloss
@@ -122,15 +145,16 @@ def test():
         sched_heuristic += get_label_scheduling(tbatch.heuristic_ann, tbatch.batch)
         sched_pred += s_pred
         sched_true += s_true
-        outputsL = [round(x, 3) for x in pred.t().tolist()[0]]
-        batchyL = [round(x, 3) for x in tbatch.y.t().tolist()[0]]
-        storeP += outputsL
-        storeT += batchyL
+        outputsL = [round(x, 2) for x in pred.t().tolist()[0]]
+        batchyL = [round(x, 2) for x in tbatch.y.t().tolist()[0]]
+        storeP += pred.t().tolist()[0]
+        storeT += tbatch.y.t().tolist()[0]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
+        tot_tnodes += len(tbatch.batch)
 
-    print('Matches TRAIN', sorted(Counter(matches).most_common()))
-    print('% guessed TRAIN:', 100 * sum(Counter(matches).values()) / tot_tnodes)
-
+    print('Matches TEST', sorted(Counter(matches).most_common()))
+    print(f'\n% guessed TEST: {100 * sum(Counter(matches).values()) / tot_tnodes:.4f}, \twith: {len(Counter(matches).most_common()):.4f} different scores')
+    print(f'\ntot pred < 0 TEST: {len([x for x in Counter(matches).keys() if x < 0]):.4f}, \t == 0: {len([x for x in Counter(matches).keys() if x == 0]):.4f}')
     wP = Counter(storeP)
     wT = Counter(storeT)
 
@@ -204,9 +228,13 @@ def train():
     for epoch in trange(1, NumEpochs + 1):
         if early_stopping_counter <= 10:
             # Training
+            plt.figure(3)
             train_loss = train_one_epoch()
+            plt.close(3)
             # Validation
+            plt.figure(4)
             val_loss = validation()
+            plt.close(4)
 
             print(f'\nTrain Loss: {train_loss:.4f}, \tValidation Loss: {val_loss:.4f}')  # , \tTest Loss: {test_loss:.4f}
 

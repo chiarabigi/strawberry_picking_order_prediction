@@ -19,10 +19,10 @@ test_path = 'dataset/data_test/'
 test_dataset = cfg.DATASET(test_path)
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset),
                          shuffle=False)  # , num_workers=2, pin_memory_device='cuda:1', pin_memory=True)
-model = GCN_scheduling(8, 0)
+model = GCN_scheduling(4, 0)
 
 
-model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230219_172247.pth'
+model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230220_165654.pth'
 model.load_state_dict(torch.load(model_path))
 model.eval()
 all_real_tscheduling = np.zeros((18, 18))
@@ -31,9 +31,14 @@ sched_students = np.zeros((18, 18))
 sched_heuristic = np.zeros((18, 18))
 occ_1 = np.zeros((4, 18))
 
+gt = []
+y = []
 for i, tbatch in enumerate(test_loader):
     # tbatch.to(device)
     pred = model(tbatch)
+
+    gt.extend(tbatch.y.tolist())
+    y.extend(pred.tolist())
     sx = 0
     batch_size = int(tbatch.batch[-1]) + 1
 
@@ -88,11 +93,11 @@ for i in range(len(sched_pred) - 1):
 print(f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_true[-1]))) / sched_pred[-1]:.4f}% of strawberries predicted as last to be picked (because unripe) is the same as ground truth')
 '''
 
-w = Counter([item for sublist in pred.tolist() for item in sublist])
+w = Counter([item for sublist in y for item in sublist])
 plt.bar(w.keys(), w.values(), width=0.0001)
 #plt.savefig('testEasiness.png')
 
-w = Counter([item for sublist in tbatch.y.tolist() for item in sublist])
+w = Counter([item for sublist in gt for item in sublist])
 plt.bar(w.keys(), w.values(), width=0.0001)
 plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
 plt.savefig('imgs/truetestEasiness.png')

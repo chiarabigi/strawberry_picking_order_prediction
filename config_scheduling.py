@@ -7,8 +7,8 @@ HL = 4
 BATCHSIZE = 32
 NL = 0
 WEIGHTDECAY = 0.01
-SEEDNUM = 0
-TORCHSEED = 0
+SEEDNUM = 24
+TORCHSEED = 24
 
 ACCURACY = BatchAccuracy_scheduling
 
