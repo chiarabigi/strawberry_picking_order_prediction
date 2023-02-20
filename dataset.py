@@ -86,9 +86,9 @@ class SchedulingDataset(Dataset):
             # Feature 1: y
             node_feats.append(box[a][1])
             # Feature 2: Width
-            node_feats.append(box[a][2])
+            # node_feats.append(box[a][2])
             # Feature 3: Height
-            node_feats.append(box[a][3])
+            # node_feats.append(box[a][3])
             # Feature 4: Ripeness
             node_feats.append(ripenes[a])
             # Feature 5: Occlusion weight

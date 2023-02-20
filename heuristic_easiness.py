@@ -106,7 +106,7 @@ for phase in phases:
         occ_ann.extend([3] * len(unripe))
         scheduling_heuristic.extend([18] * len(unripe))
         sched.extend([18] * len(unripe))
-        ripeness = [1] * len(ripe) + [-1] * len(unripe)
+        ripeness = [1] * len(ripe) + [0] * len(unripe)
         boxes = ripe
         boxes.extend(unripe)
 
