@@ -55,7 +55,7 @@ def train_one_epoch():
         batchyL = [round(x, 3) for x in batch.y.t().tolist()[0]]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
 
-    print('Matches TRAIN', sorted(Counter(matches).most_common()))
+    print('\n Matches TRAIN', sorted(Counter(matches).most_common()))
     print('% guessed TRAIN:', 100 * sum(Counter(matches).values()) / tot_nodes)
     # for loss plot
     y_loss['train'].append(running_loss / step)
@@ -109,6 +109,8 @@ def test():
     sched_heuristic = np.zeros(18)
     storeT = []
     storeP = []
+    matches = []
+    tot_tnodes = 0.0
 
     for i, tbatch in enumerate(test_loader):
         # tbatch.to(device)
@@ -120,8 +122,14 @@ def test():
         sched_heuristic += get_label_scheduling(tbatch.heuristic_ann, tbatch.batch)
         sched_pred += s_pred
         sched_true += s_true
-        storeP += [round(x, 3) for x in pred.t().tolist()[0]]
-        storeT += [round(x, 3) for x in tbatch.y.t().tolist()[0]]
+        outputsL = [round(x, 3) for x in pred.t().tolist()[0]]
+        batchyL = [round(x, 3) for x in tbatch.y.t().tolist()[0]]
+        storeP += outputsL
+        storeT += batchyL
+        matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
+
+    print('Matches TRAIN', sorted(Counter(matches).most_common()))
+    print('% guessed TRAIN:', 100 * sum(Counter(matches).values()) / tot_tnodes)
 
     wP = Counter(storeP)
     wT = Counter(storeT)
@@ -130,7 +138,7 @@ def test():
     plt.bar(wP.keys(), wP.values(), width=0.0001)
     plt.bar(wT.keys(), wT.values(), width=0.0001)
     plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
-    plt.savefig('truetestEasiness.png')
+    plt.savefig('imgs/truetestEasiness.png')
 
     '''
     for i in range(len(real_tscheduling) - 1):

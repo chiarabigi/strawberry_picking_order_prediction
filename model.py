@@ -8,7 +8,7 @@ class GCN_scheduling(torch.nn.Module):
     def __init__(self, hidden_layers, num_layers):
         super(GCN_scheduling, self).__init__()
 
-        self.nfeat = 6  # number of node features
+        self.nfeat = 4  # number of node features
         self.nhead = 1
         self.edge_dim = 1  # size of edge feature
 
@@ -35,8 +35,8 @@ class GCN_scheduling(torch.nn.Module):
         x2 = F.elu(x1)
 
 
-        x3 = self.conv2(x2, edge_index, edge_weight)
-        x4 = F.dropout(x3, p=0.2, training=self.training)
+        x3 = F.dropout(x2, p=0.2, training=self.training)
+        x4 = self.conv2(x3, edge_index, edge_weight)
         #x5 = self.linear(x4)
         #x5 = self.sigmoid(x4)
         #x5 = self.customSigmoid(x4)

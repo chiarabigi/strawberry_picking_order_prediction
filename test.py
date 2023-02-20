@@ -5,7 +5,6 @@ import config_scheduling as cfg
 from model import GCN_scheduling
 import json
 from utils import get_single_out
-import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
 
@@ -96,7 +95,7 @@ plt.bar(w.keys(), w.values(), width=0.0001)
 w = Counter([item for sublist in tbatch.y.tolist() for item in sublist])
 plt.bar(w.keys(), w.values(), width=0.0001)
 plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
-plt.savefig('truetestEasiness.png')
+plt.savefig('imgs/truetestEasiness.png')
 '''
 # Generating data for the heat map
 data = sched_true
