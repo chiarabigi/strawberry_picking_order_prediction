@@ -283,7 +283,7 @@ if __name__ == '__main__':
     if device.type == 'cpu':
         cfg = config_scheduling
     else:
-        cfg = config_scheduling_gpu
+        cfg = config_scheduling  # _gpu
 
     goal = 'easiness'
     #multiprocessing.set_start_method('spawn')

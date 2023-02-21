@@ -74,11 +74,11 @@ for phase in phases:
 
         occ_score = ripe_infoT['occlusion_by_berry%']
 
-        '''
+        ''''''
         # balance scores
         distribution = w.most_common()
         easyr = [round(x, 4) for x in easiness]
-        elem = [[y for y in range(len(easyr)) if (distribution[x][0] == easyr[y] and distribution[x][1] > 5)] for x in range(len(distribution))]
+        elem = [[y for y in range(len(easyr)) if (distribution[x][0] == easyr[y] and distribution[x][1] > 10)] for x in range(len(distribution))]
         elem = [item for sublist in elem for item in sublist]
         if len(elem) >= len(easiness) - 1:
             continue
@@ -93,7 +93,7 @@ for phase in phases:
             dist_score.pop(idx)
             xy.pop(idx)
             sched.pop(idx)
-            coord.pop(idx)'''
+            coord.pop(idx)
 
         easy += [round(x, 4) for x in easiness]
         w = Counter(easy)
@@ -126,10 +126,7 @@ for phase in phases:
         boxes = [boxes[j] for j in order]
         coord = [coord[j] for j in order]
         ripeness = [ripeness[j] for j in order]
-        try:
-            scheduling_easiness = [scheduling_easiness[k] for k in order]
-        except IndexError:
-            print(0)
+        scheduling_easiness = [scheduling_easiness[k] for k in order]
         sched = [sched[k] for k in order]
         scheduling_heuristic = [scheduling_heuristic[k] for k in order]
         occ_ann = [occ_ann[h] for h in order]
@@ -160,7 +157,7 @@ for phase in phases:
     one = 1
     w = Counter(easy)
     plt.bar(w.keys(), w.values(), width=0.001)
-    plt.savefig('imgs/barEasiness_distributed_traintestval.png'.format(phase))
+    plt.savefig('imgs/barEasiness_distributed_traintestval.png')
     easy_tot += easy
 
     ''''''
@@ -168,6 +165,8 @@ for phase in phases:
     with open(save_path, 'w') as f:
         json.dump(gnnann, f)
     print(phase + str(len(gnnann)))  # train784, val123, test118
+
+# max(easy_tot) = 1.255
 
 
 

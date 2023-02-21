@@ -19,10 +19,10 @@ test_path = 'dataset/data_test/'
 test_dataset = cfg.DATASET(test_path)
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset),
                          shuffle=False)  # , num_workers=2, pin_memory_device='cuda:1', pin_memory=True)
-model = GCN_scheduling(4, 0)
+model = GCN_scheduling(16, 0)
 
 
-model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230220_165654.pth'
+model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230221_083848.pth'
 model.load_state_dict(torch.load(model_path))
 model.eval()
 all_real_tscheduling = np.zeros((18, 18))
@@ -41,7 +41,7 @@ for i, tbatch in enumerate(test_loader):
     y.extend(pred.tolist())
     sx = 0
     batch_size = int(tbatch.batch[-1]) + 1
-
+    '''
     for j in range(batch_size):
         dx = get_single_out(tbatch.batch, j, sx)
         y_occ = tbatch.info[sx:dx]
@@ -62,7 +62,7 @@ for i, tbatch in enumerate(test_loader):
             occ_1[y_occ[k]][sched[k]] += 1
         sx = dx
 
-'''
+
 for i in range(len(real_tscheduling) - 1):
     print(f'\n {100*real_tscheduling[i]/real_tscheduling.sum():.4f}% of strawberries predicted as EASIEST TO PICK in the cluster where scheduled as {i + 1:.4f}')
 print(f'\n {100*real_tscheduling[-1]/real_tscheduling.sum():.4f}% of strawberries predicted as EASIEST TO PICK in the cluster where UNRIPE')
@@ -94,11 +94,13 @@ print(f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_true[-1]))) /
 '''
 
 w = Counter([item for sublist in y for item in sublist])
-plt.bar(w.keys(), w.values(), width=0.0001)
-#plt.savefig('testEasiness.png')
+plt.figure(1)
+plt.bar(w.keys(), w.values(), width=0.001)
+plt.savefig('imgs/testEasiness.png')
 
 w = Counter([item for sublist in gt for item in sublist])
-plt.bar(w.keys(), w.values(), width=0.0001)
+plt.figure(2)
+plt.bar(w.keys(), w.values(), width=0.001)
 plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
 plt.savefig('imgs/truetestEasiness.png')
 '''
