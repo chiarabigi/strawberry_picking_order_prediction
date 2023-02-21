@@ -45,7 +45,7 @@ for phase in phases:
 
         ripe = anns['bbox'][sx:dx]
         occ = anns['category_id'][sx:dx]
-        sched = anns['segmentation'][sx:dx]
+        sched = anns['scheduling'][sx:dx]
         tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes'])) if unripe_ann['file_name'][x] == filename.split('_')[-1]][0]
         sx = dx
         if len(tot_unripe) > 0:
