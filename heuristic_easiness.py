@@ -1,4 +1,5 @@
 import json
+import os
 import torch
 import random
 import numpy as np
@@ -11,13 +12,13 @@ from utils import get_single_out, true_unripe, get_info, min_str_dist, get_dist_
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-base_path = '/home/chiara/strawberry_picking_order_prediction/'
+base_path = os.path.dirname(os.path.abspath(__file__))
 img_path = '/home/chiara/DATASETS/images/'   # images are to be downloaded
 
 # unripe info
 big_dist = []
 big_scores = []
-unripe_path = base_path + 'dataset/unripe.json'  # obtained with detectron2 ran on GPU
+unripe_path = base_path + '/dataset/unripe.json'  # obtained with detectron2 ran on GPU
 with open(unripe_path) as f:
     unripe_annT = json.load(f)
 unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}
@@ -26,9 +27,9 @@ w = Counter([])
 phases = ['train', 'val', 'test']
 for phase in phases:
     easy = []
-    filepath = base_path + 'scheduling/data_{}/raw/gnnann.json'.format(phase)
+    filepath = base_path + '/scheduling/data_{}/raw/gnnann.json'.format(phase)
     gnnann = []
-    json_path = base_path + 'dataset/isamesize_{}.json'.format(phase)
+    json_path = base_path + '/dataset/isamesize_{}.json'.format(phase)
     with open(json_path) as f:
         json_file = json.load(f)
     imagesT = json_file['images']
@@ -168,7 +169,7 @@ for phase in phases:
     easy_tot += easy
 
     ''''''
-    save_path = base_path + 'dataset/data_{}/raw/gnnann.json'.format(phase)
+    save_path = base_path + '/dataset/data_{}/raw/gnnann.json'.format(phase)
     with open(save_path, 'w') as f:
         json.dump(gnnann, f)
     print(phase + str(len(gnnann)))  # train784, val123, test118
