@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import json
-from scipy.spatial import distance
+import math
 from PIL import Image
 from torchvision import transforms
 from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
@@ -34,7 +34,7 @@ def overlap(bbox1, bbox2):
     y1c = bbox1[1] + bbox1[3] / 2
     x2c = bbox2[0] + bbox2[2] / 2
     y2c = bbox2[1] + bbox2[3] / 2
-    L = distance.euclidean((x1c, y1c), (x2c, y2c))
+    L = math.sqrt(math.pow(x1c - x2c, 2) + math.pow(y1c - y2c, 2))  # distance.euclidean((x1c, y1c), (x2c, y2c))
     if L < 30:
         return True
     else:
@@ -152,7 +152,7 @@ def min_str_dist(all_strawberries, check_berry_occlusion):
                 yoc = all_strawberries[j]['yc']
                 wo2 = all_strawberries[j]['w_half']
 
-                ip = abs(distance.euclidean((xrc, yrc), (xoc, yoc)))
+                ip = math.sqrt(math.pow(xrc - xoc, 2) + math.pow(yrc - yoc, 2))  # abs(distance.euclidean((xrc, yrc), (xoc, yoc)))
                 x = abs(float(xoc - xrc))
 
                 ipr = 2 * wr2
