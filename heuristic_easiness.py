@@ -141,7 +141,7 @@ for phase in phases:
         if device.type == 'cpu':
             patches = []
         else:
-            patches = get_patches(xy, d)
+            patches = []  # get_patches(xy, d)
 
         gnnann.append({
             'img_ann': coord,
