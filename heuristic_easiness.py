@@ -15,6 +15,8 @@ base_path = '/home/chiara/strawberry_picking_order_prediction/'
 img_path = '/home/chiara/DATASETS/images/'   # images are to be downloaded
 
 # unripe info
+big_dist = []
+big_scores = []
 unripe_path = base_path + 'dataset/unripe.json'  # obtained with detectron2 ran on GPU
 with open(unripe_path) as f:
     unripe_annT = json.load(f)
@@ -60,6 +62,9 @@ for phase in phases:
 
         ripe_info.extend(unripe_info)
         min_dist_ripe = min_str_dist(ripe_info, True)['min_dist'][:len_ripe_info]
+        high_dist = [x for x in min_dist_ripe if x > 0.5]
+        if len(high_dist) > 0:
+            big_dist.append(filename.split('_')[-1])
         ripe_infoT = {k: [dic[k] for dic in ripe_info] for k in ripe_info[0]}
         xy = list(map(list, zip(*[[int(x) for x in ripe_infoT['xc']], [int(y) for y in ripe_infoT['yc']]])))
         ripe_info = ripe_info[:len_ripe_info]
@@ -68,13 +73,15 @@ for phase in phases:
         coord = [[coordT[0][i], coordT[1][i]] for i in range(len(coordT[0]))]
 
         dist_score = get_dist_score(min_dist_ripe)
-        occ_score = get_occ_score(ripe_info)
+        occ_sc = get_occ_score(ripe_info)
 
-        easiness = [dist_score[e] * occ_score[e] for e in range(len(dist_score))]
-
+        easiness = [dist_score[e] * occ_sc[e] for e in range(len(dist_score))]
+        high_score = [x for x in easiness if x > 0.5]
+        if len(high_score) > 0:
+            big_scores.append(filename.split('_')[-1])
         occ_score = ripe_infoT['occlusion_by_berry%']
 
-        ''''''
+        '''
         # balance scores
         distribution = w.most_common()
         easyr = [round(x, 4) for x in easiness]
@@ -93,9 +100,9 @@ for phase in phases:
             dist_score.pop(idx)
             xy.pop(idx)
             sched.pop(idx)
-            coord.pop(idx)
+            coord.pop(idx)'''
 
-        easy += [round(x, 4) for x in easiness]
+        easy += [x for x in easiness]  # round(x, 4)
         w = Counter(easy)
 
         scheduling_easiness = sorted(range(len(easiness)), reverse=True, key=lambda k: easiness[k])
@@ -166,7 +173,7 @@ for phase in phases:
         json.dump(gnnann, f)
     print(phase + str(len(gnnann)))  # train784, val123, test118
 
-# max(easy_tot) = 1.255
+one = 1  # max(easy_tot) = 1.255
 
 
 

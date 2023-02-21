@@ -8,7 +8,7 @@ dataset_all = '/home/chiara/SEGMENTATION/DATASETS/DATASET_ASSIGNMENT1/'
 occlusion_properties = ['occluded', 'occluding', 'occluded/occluding', 'neither']
 
 # JUST OCCLUSION
-
+big_scores = ['424.png', '442.png', '627.png', '573.png', '2390.png', '500.png', '524.png', '790.png', '1585.png', '366.png', '1569.png', '609.png', '473.png', '204.png', '427.png', '1575.png', '1120.png', '1543.png', '279.png', '458.png', '512.png', '118.png', '586.png', '437.png', '568.png', '555.png', '402.png', '798.png', '506.png', '336.png', '1658.png', '675.png', '1508.png', '444.png', '481.png', '254.png', '1524.png', '523.png']
 phases = ["train", "val", "test"]
 for phase in phases:
     root_path = '/home/chiara/DATASETS/images/'
@@ -25,18 +25,20 @@ for phase in phases:
     image_id = 0
     allfiles = os.listdir(gt_path)
     for a in allfiles:
-        for twice in range(4):
-            file_path = os.path.join(gt_path, a)
-            with open(file_path) as f:
-                anns = json.load(f)
-            key = list(anns.keys())[0]
+        file_path = os.path.join(gt_path, a)
+        with open(file_path) as f:
+            anns = json.load(f)
+        key = list(anns.keys())[0]
+        rep = 1
+        file_name = anns[key]['filename']
+        image = root_path + file_name
+        width, height = Image.open(image).size
+        if height != 720:
+            continue
 
-            file_name = anns[key]['filename']
-
-            image = root_path + file_name
-            width, height = Image.open(image).size
-            if height != 720:
-                continue
+        if file_name in big_scores:
+            rep = 100
+        for twice in range(rep):
 
             img_elem = {"file_name": str(twice)+'_'+file_name,
                         "height": height,
@@ -56,8 +58,8 @@ for phase in phases:
 
             for i in range(num_boxes):
                 if i not in rem:
-                    xmin = int(anns[key]['regions'][i]['shape_attributes']['x'])
-                    ymin = int(anns[key]['regions'][i]['shape_attributes']['y'])
+                    xmin = int(anns[key]['regions'][i]['shape_attributes']['x']) + twice * 3
+                    ymin = int(anns[key]['regions'][i]['shape_attributes']['y']) + twice * 3
                     w = int(anns[key]['regions'][i]['shape_attributes']['width'])
                     h = int(anns[key]['regions'][i]['shape_attributes']['height'])
                     bbox = [xmin, ymin, w, h]
