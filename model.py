@@ -28,7 +28,7 @@ class GCN_scheduling(torch.nn.Module):
         self.customleaky = CustomLeakyReLU()
         self.leaky = torch.nn.LeakyReLU(0.01)
         self.prelu = torch.nn.PReLU()
-        self.lin = torch.nn.Linear()
+        self.lin = torch.nn.Linear(1,1)
 
     def forward(self, data):
 
