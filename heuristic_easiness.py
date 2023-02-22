@@ -25,12 +25,14 @@ with open(unripe_path) as f:
     unripe_annT = json.load(f)
 unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}
 easy_tot = []
+ueasy_tot = []
 w = Counter([])
 phases = ['train', 'val', 'test']
 for phase in phases:
     unripes = []
     ripes = []
     easy = []
+    ueasy = []
     filepath = base_path + '/scheduling/data_{}/raw/gnnann.json'.format(phase)
     gnnann = []
     json_path = base_path + '/dataset/isamesize_{}.json'.format(phase)
@@ -82,9 +84,9 @@ for phase in phases:
 
         dist_score = get_dist_score(min_dist)
         occ_sc = get_occ_score(ripe_info)
-        ripeness = [1] * len(ripe) + [-1] * len(unripe)
+        ripeness = [1] * len(ripe) + [0] * len(unripe)
 
-        easiness = [dist_score[e] * occ_sc[e] * ripeness[e] for e in range(len(dist_score))]
+        easiness = [dist_score[e] * occ_sc[e] + ripeness[e] * 0.5 for e in range(len(dist_score))]
         high_score = [x for x in easiness if x > 0.5]
         if len(high_score) > 0:
             big_scores.append(filename.split('_')[-1])
@@ -112,8 +114,7 @@ for phase in phases:
             sched.pop(idx)
             coord.pop(idx)'''
 
-
-
+        # easiness = [(x + 1) / 2 for x in easiness]
         # easiness = [x * 100 for x in easiness]
         scheduling_easiness = sorted(range(len(easiness)), reverse=True, key=lambda k: easiness[k])
         scheduling_easiness = [x + 1 for x in scheduling_easiness]
@@ -138,7 +139,8 @@ for phase in phases:
         scheduling_heuristic.extend([18] * len(unripe))
         sched.extend([18] * len(unripe))
 
-        easy += [round(x, 4) for x in easiness]
+        easy += easiness[:len_ripe_info]  # [round(x, 4) for x in easiness]
+        ueasy += easiness[len_ripe_info:]
         w = Counter(easy)
 
         boxes = ripe
@@ -182,10 +184,11 @@ for phase in phases:
     gnnannT = {k: [dic[k] for dic in gnnann] for k in gnnann[0]}
     maxbox = max([item for sublist in gnnannT['boxes'] for item in sublist])
     one = 1
-    w = Counter(easy)
+    w = Counter(easy+ueasy)
     plt.bar(w.keys(), w.values(), width=0.001)
     plt.savefig('imgs/barEasiness_distributed_traintestval.png')
     easy_tot += easy
+    ueasy_tot += ueasy
     unripes_tot.append(unripes)
     ripes_tot.append(ripes)
 
@@ -196,7 +199,10 @@ for phase in phases:
     print(phase + str(len(gnnann)))  # train784, val123, test118
 
 print(max(easy_tot))
-
+print(min([x for x in easy_tot if x != 0]))
+print(max(ueasy_tot))
+print(min(ueasy_tot))
+one = 1
 # WITH MANY UNRIPES
 # < 0.01 train299, val45, test44, 0.01
 # =< 0.1: train407, val62, test66, 0.5623

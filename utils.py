@@ -198,6 +198,7 @@ def min_str_dist(all_strawberries, check_berry_occlusion):
                         if occlusion_fraction < 1:  # I shall never know why this happens
                             all_strawberries[i]['occlusion'] = 4
                             all_strawberries[i]['occlusion_by_berry%'] = 1 - occlusion_fraction
+                        box_dist = 1 / box_dist
 
                 dist.append(abs(box_dist))
                 edges.append([[i, j], [j, i]])
@@ -233,7 +234,7 @@ def get_dist_score(all_ripe_min_dist):
         dist_score.append(1)
     else:
         for d in range(len(all_ripe_min_dist)):
-            dist_score.append(all_ripe_min_dist[d] * 1.52765)
+            dist_score.append(all_ripe_min_dist[d] * 0.7)
     return dist_score
 
 def get_occ_score(ripe_info):

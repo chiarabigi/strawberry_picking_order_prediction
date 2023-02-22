@@ -28,7 +28,7 @@ class GCN_scheduling(torch.nn.Module):
         self.customleaky = CustomLeakyReLU()
         self.leaky = torch.nn.LeakyReLU(0.01)
         self.prelu = torch.nn.PReLU()
-        self.lin = torch.nn.Linear(1,1)
+        self.lin = torch.nn.Linear(1, 1)
 
     def forward(self, data):
 
@@ -40,11 +40,12 @@ class GCN_scheduling(torch.nn.Module):
         x3 = F.dropout(x2, p=0.2, training=self.training)
         x4 = self.conv2(x3, edge_index, edge_weight)
         #x5 = self.linear(x4)
-        #x5 = self.sigmoid(x4)
+        x5 = self.sigmoid(x4)
         #x5 = self.customleaky(x4)
         #x5 = self.prelu(x4)
-        x5 = self.lin(x4)
+        #x5 = self.lin(x4)
         return x5
+
 
 class mySigmoid(torch.nn.Module):
     def __init__(self, beta):

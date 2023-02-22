@@ -12,7 +12,6 @@ from utils import get_occlusion1, get_realscheduling, get_whole_scheduling, get_
 import multiprocessing
 from collections import Counter
 from model import GCN_scheduling
-from utils import BatchAccuracy_scheduling
 from dataset import SchedulingDataset
 
 
@@ -334,7 +333,7 @@ if __name__ == '__main__':
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, weight_decay=weightDecay)
     scheduler = ReduceLROnPlateau(optimizer)
-    criterion = torch.nn.MSELoss()  # torch.nn.BCELoss()  # weight it!! classes are imbalanced
+    criterion = torch.nn.BCELoss()  # torch.nn.MSELoss()
 
     # Parameters for plots
 

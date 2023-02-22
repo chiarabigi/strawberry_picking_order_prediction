@@ -7,7 +7,9 @@ import json
 from utils import get_single_out
 import matplotlib.pyplot as plt
 from collections import Counter
+from dataset import SchedulingDataset
 
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 gnn_path = '/home/chiara/strawberry_picking_order_prediction/dataset/data_test/raw/gnnann.json'
 with open(gnn_path) as f:
     anns = json.load(f)
@@ -16,20 +18,19 @@ students_ann = infoT['students_sc_ann']
 heuristic_ann = infoT['heuristic_sc_ann']
 
 test_path = 'dataset/data_test/'
-test_dataset = cfg.DATASET(test_path)
+test_dataset = SchedulingDataset(test_path)
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset),
                          shuffle=False)  # , num_workers=2, pin_memory_device='cuda:1', pin_memory=True)
-model = GCN_scheduling(8, 0)
+model = GCN_scheduling(cfg.HL, cfg.NL).to(device)
 
 
-model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230221_202418.pth'
+model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230222_092735.pth'
 model.load_state_dict(torch.load(model_path))
 model.eval()
-all_real_tscheduling = np.zeros((30, 30))
-sched_true = np.zeros((30, 30))
-sched_students = np.zeros((30, 30))
-sched_heuristic = np.zeros((30, 30))
-occ_1 = np.zeros((4, 30))
+sched_true = np.zeros((32, 32))
+sched_students = np.zeros((32, 32))
+sched_heuristic = np.zeros((32, 32))
+occ_1 = np.zeros((4, 32))
 
 gt = []
 y = []
@@ -54,15 +55,12 @@ for i, tbatch in enumerate(test_loader):
         unripe = [x for x in y_gt if x == 18]
 
         for k in range(len(sched)):
-            if y_gt[k] == 18 and sched[k] > (len(sched) - len(unripe) - 1):
+            sched_true[sched[k]][y_gt[k] - 1] += 1
+            occ_1[y_occ[k]][sched[k]] += 1
+            if y_stud[k] == 18 and sched[k] > (len(sched) - len(unripe) - 1):
                 sched[k] = 17
-            try:
-                sched_true[sched[k]][y_gt[k] - 1] += 1
-            except IndexError:
-                print(0)
             sched_students[sched[k]][y_stud[k] - 1] += 1
             sched_heuristic[sched[k]][y_heu[k] - 1] += 1
-            occ_1[y_occ[k]][sched[k]] += 1
         sx = dx
 
 '''
@@ -95,14 +93,12 @@ for i in range(len(sched_pred) - 1):
     print(f'\n {100 * (abs(sched_pred[i] - abs(sched_pred[i] - sched_true[i]))) / sched_pred[i]:.4f}% of strawberries predicted as {int(i + 1):.4f} to be picked is the same as ground truth')
 print(f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_true[-1]))) / sched_pred[-1]:.4f}% of strawberries predicted as last to be picked (because unripe) is the same as ground truth')
 '''
-
-w = Counter([item for sublist in y for item in sublist])
-plt.bar(w.keys(), w.values(), width=0.001)
+wT = Counter([item for sublist in gt for item in sublist])
+plt.bar(wT.keys(), wT.values(), width=0.001)
+wP = Counter([item for sublist in y for item in sublist])
+plt.bar(wP.keys(), wP.values(), width=0.001)
 #plt.savefig('imgs/testEasiness.png')
-
-w = Counter([item for sublist in gt for item in sublist])
-plt.bar(w.keys(), w.values(), width=0.001)
-plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
+plt.title('Strawberry test easiness score. Blue: gt. Orange: predicted')
 plt.savefig('imgs/truetestEasiness.png')
 ''''''
 # Generating data for the heat map
@@ -121,7 +117,7 @@ plt.colorbar()
 for i in range(len(sched_true)):
     for j in range(len(sched_true)):
         text = ax.text(j, i, int(sched_true[i, j]),
-                       ha="center", va="center", color="w")
+                       ha="center", va="center", color="w", fontsize='x-small')
 # Displaying the plot
 plt.savefig('imgs/heatmaps/heatmapEasiness.png')
 
@@ -137,7 +133,7 @@ plt.colorbar()
 for i in range(len(sched_heuristic)):
     for j in range(len(sched_heuristic)):
         text = ax.text(j, i, int(sched_heuristic[i, j]),
-                       ha="center", va="center", color="w")
+                       ha="center", va="center", color="w", fontsize='x-small')
 
 # Displaying the plot
 plt.savefig('imgs/heatmaps/heatmapHeuristic.png')
@@ -154,7 +150,7 @@ plt.colorbar()
 for i in range(len(sched_students)):
     for j in range(len(sched_students)):
         text = ax.text(j, i, int(sched_students[i, j]),
-                       ha="center", va="center", color="w")
+                       ha="center", va="center", color="w", fontsize='x-small')
 
 # Displaying the plot
 plt.savefig('imgs/heatmaps/heatmapStudents.png')
@@ -174,7 +170,7 @@ ax.set_yticks(np.arange(len(occlusions)), labels=occlusions)
 for i in range(len(occ_1)):
     for j in range(len(occ_1[i])):
         text = ax.text(j, i, int(occ_1[i, j]),
-                       ha="center", va="center", color="w")
+                       ha="center", va="center", color="w", fontsize='x-small')
 
 # Displaying the plot
 plt.savefig('imgs/heatmaps/heatmapOcclusions.png')
