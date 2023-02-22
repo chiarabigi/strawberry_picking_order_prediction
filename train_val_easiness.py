@@ -48,13 +48,16 @@ def train_one_epoch():
         # print(f'\nTrain Loss: {loss.item():.4f}, \t at iteration: {int(i):.4f}')
         running_loss += loss.item()
 
-        real_scheduling += get_realscheduling(outputs, batch.label, batch.batch)
-        occ_1 += get_occlusion1(outputs, batch.info, batch.batch)
+        if loss.item() > 1:
+            print(0)
+
+        # real_scheduling += get_realscheduling(outputs, batch.label, batch.batch)
+        # occ_1 += get_occlusion1(outputs, batch.info, batch.batch)
         tot_nodes += len(batch.batch)
         step += 1
 
-        storeP += outputs.t().tolist()[0]
-        storeT += batch.y.t().tolist()[0]
+        storeT.extend(batch.y.t().tolist()[0])
+        storeP.extend(outputs.t().tolist()[0])
         outputsL = [round(x, 2) for x in outputs.t().tolist()[0]]
         batchyL = [round(x, 2) for x in batch.y.t().tolist()[0]]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
@@ -66,10 +69,10 @@ def train_one_epoch():
     y_loss['train'].append(running_loss / step)
     wP = Counter(storeP)
     wT = Counter(storeT)
+    plt.bar(wT.keys(), wT.values(), width=0.001)
+    plt.bar(wP.keys(), wP.values(), width=0.001)
 
-    plt.bar(wP.keys(), wP.values(), width=0.0001)
-    plt.bar(wT.keys(), wT.values(), width=0.0001)
-    plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
+    plt.title('Strawberry train easiness score. Blue: gt. Orange: predicted')
     plt.savefig('imgs/truetrainEasiness.png')
     #print('True scheduling of predicted as first (TRAIN): ', real_scheduling)
     #print('Occlusion property for node with higher probability (TRAIN): ', occ_1)
@@ -94,12 +97,12 @@ def validation():
         # vloss = torch.nn.functional.binary_cross_entropy(voutputs, vbatch.y, weights)
         vloss = criterion(voutputs, vbatch.y)
         running_vloss += vloss.item()
-        real_vscheduling += get_realscheduling(voutputs, vbatch.label, vbatch.batch)
-        occ_1 += get_occlusion1(voutputs, vbatch.info, vbatch.batch)
+        # real_vscheduling += get_realscheduling(voutputs, vbatch.label, vbatch.batch)
+        # occ_1 += get_occlusion1(voutputs, vbatch.info, vbatch.batch)
         tot_vnodes += len(vbatch.batch)
         step += 1
-        storeT += vbatch.y.t().tolist()[0]
-        storeP += voutputs.t().tolist()[0]
+        storeT.extend(vbatch.y.t().tolist()[0])
+        storeP.extend(voutputs.t().tolist()[0])
         outputsL = [round(x, 2) for x in voutputs.t().tolist()[0]]
         batchyL = [round(x, 2) for x in vbatch.y.t().tolist()[0]]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
@@ -112,10 +115,10 @@ def validation():
     y_loss['val'].append(avg_vloss)
     wP = Counter(storeP)
     wT = Counter(storeT)
+    plt.bar(wT.keys(), wT.values(), width=0.001)
+    plt.bar(wP.keys(), wP.values(), width=0.001)
 
-    plt.bar(wP.keys(), wP.values(), width=0.0001)
-    plt.bar(wT.keys(), wT.values(), width=0.0001)
-    plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
+    plt.title('Strawberry val easiness score. Blue: gt. Orange: predicted')
     plt.savefig('imgs/truevalEasiness.png')
     #print('True scheduling of predicted as first (VAL): ', real_vscheduling)
     #print('Occlusion property for node with higher probability (VAL): ', occ_1)
@@ -138,17 +141,17 @@ def test():
     for i, tbatch in enumerate(test_loader):
         # tbatch.to(device)
         pred = model(tbatch)
-        real_tscheduling += get_realscheduling(pred, tbatch.label, tbatch.batch)
-        occ_1 += get_occlusion1(pred, tbatch.info, tbatch.batch)
-        s_pred, s_true = get_whole_scheduling(pred, tbatch.label, tbatch.batch)
-        sched_students += get_label_scheduling(tbatch.students_ann, tbatch.batch)
-        sched_heuristic += get_label_scheduling(tbatch.heuristic_ann, tbatch.batch)
-        sched_pred += s_pred
-        sched_true += s_true
+        #real_tscheduling += get_realscheduling(pred, tbatch.label, tbatch.batch)
+        #occ_1 += get_occlusion1(pred, tbatch.info, tbatch.batch)
+        #s_pred, s_true = get_whole_scheduling(pred, tbatch.label, tbatch.batch)
+        #sched_students += get_label_scheduling(tbatch.students_ann, tbatch.batch)
+        #sched_heuristic += get_label_scheduling(tbatch.heuristic_ann, tbatch.batch)
+        #sched_pred += s_pred
+        #sched_true += s_true
         outputsL = [round(x, 2) for x in pred.t().tolist()[0]]
         batchyL = [round(x, 2) for x in tbatch.y.t().tolist()[0]]
-        storeP += pred.t().tolist()[0]
-        storeT += tbatch.y.t().tolist()[0]
+        storeT.extend(tbatch.y.t().tolist()[0])
+        storeP.extend(pred.t().tolist()[0])
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
         tot_tnodes += len(tbatch.batch)
 
@@ -159,9 +162,10 @@ def test():
     wT = Counter(storeT)
 
     plt.figure(2)
-    plt.bar(wP.keys(), wP.values(), width=0.0001)
-    plt.bar(wT.keys(), wT.values(), width=0.0001)
-    plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
+    plt.bar(wT.keys(), wT.values(), width=0.001)
+    plt.bar(wP.keys(), wP.values(), width=0.001)
+
+    plt.title('Strawberry test easiness score. Blue: gt. Orange: predicted')
     plt.savefig('imgs/truetestEasiness.png')
 
     '''

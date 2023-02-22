@@ -210,7 +210,7 @@ def min_str_dist(all_strawberries, check_berry_occlusion):
             all_min_edges += edges[dist.index(min(dist))]
 
     ''''''
-    max_dist = 1314
+    max_dist = 1314  # max(all_feats)
     all_min_dist = [x / max_dist for x in all_min_dist]
     all_feats = [x / max_dist for x in all_feats]
     if check_berry_occlusion:
@@ -233,7 +233,7 @@ def get_dist_score(all_ripe_min_dist):
         dist_score.append(1)
     else:
         for d in range(len(all_ripe_min_dist)):
-            dist_score.append(all_ripe_min_dist[d] * 1.5)
+            dist_score.append(all_ripe_min_dist[d] * 1.52765)
     return dist_score
 
 def get_occ_score(ripe_info):

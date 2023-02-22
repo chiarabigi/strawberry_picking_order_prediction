@@ -19,17 +19,17 @@ test_path = 'dataset/data_test/'
 test_dataset = cfg.DATASET(test_path)
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset),
                          shuffle=False)  # , num_workers=2, pin_memory_device='cuda:1', pin_memory=True)
-model = GCN_scheduling(16, 0)
+model = GCN_scheduling(8, 0)
 
 
-model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230221_083848.pth'
+model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230221_202418.pth'
 model.load_state_dict(torch.load(model_path))
 model.eval()
-all_real_tscheduling = np.zeros((18, 18))
-sched_true = np.zeros((18, 18))
-sched_students = np.zeros((18, 18))
-sched_heuristic = np.zeros((18, 18))
-occ_1 = np.zeros((4, 18))
+all_real_tscheduling = np.zeros((30, 30))
+sched_true = np.zeros((30, 30))
+sched_students = np.zeros((30, 30))
+sched_heuristic = np.zeros((30, 30))
+occ_1 = np.zeros((4, 30))
 
 gt = []
 y = []
@@ -37,11 +37,11 @@ for i, tbatch in enumerate(test_loader):
     # tbatch.to(device)
     pred = model(tbatch)
 
-    gt.extend(tbatch.y.tolist())
-    y.extend(pred.tolist())
+    gt += [x for x in tbatch.y.tolist() if x != 0]
+    y += [x for x in pred.tolist() if x != 0]
     sx = 0
     batch_size = int(tbatch.batch[-1]) + 1
-    '''
+
     for j in range(batch_size):
         dx = get_single_out(tbatch.batch, j, sx)
         y_occ = tbatch.info[sx:dx]
@@ -56,13 +56,16 @@ for i, tbatch in enumerate(test_loader):
         for k in range(len(sched)):
             if y_gt[k] == 18 and sched[k] > (len(sched) - len(unripe) - 1):
                 sched[k] = 17
-            sched_true[sched[k]][y_gt[k] - 1] += 1
+            try:
+                sched_true[sched[k]][y_gt[k] - 1] += 1
+            except IndexError:
+                print(0)
             sched_students[sched[k]][y_stud[k] - 1] += 1
             sched_heuristic[sched[k]][y_heu[k] - 1] += 1
             occ_1[y_occ[k]][sched[k]] += 1
         sx = dx
 
-
+'''
 for i in range(len(real_tscheduling) - 1):
     print(f'\n {100*real_tscheduling[i]/real_tscheduling.sum():.4f}% of strawberries predicted as EASIEST TO PICK in the cluster where scheduled as {i + 1:.4f}')
 print(f'\n {100*real_tscheduling[-1]/real_tscheduling.sum():.4f}% of strawberries predicted as EASIEST TO PICK in the cluster where UNRIPE')
@@ -94,16 +97,14 @@ print(f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_true[-1]))) /
 '''
 
 w = Counter([item for sublist in y for item in sublist])
-plt.figure(1)
 plt.bar(w.keys(), w.values(), width=0.001)
-plt.savefig('imgs/testEasiness.png')
+#plt.savefig('imgs/testEasiness.png')
 
 w = Counter([item for sublist in gt for item in sublist])
-plt.figure(2)
 plt.bar(w.keys(), w.values(), width=0.001)
 plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
 plt.savefig('imgs/truetestEasiness.png')
-'''
+''''''
 # Generating data for the heat map
 data = sched_true
 # Function to show the heat map
@@ -122,7 +123,7 @@ for i in range(len(sched_true)):
         text = ax.text(j, i, int(sched_true[i, j]),
                        ha="center", va="center", color="w")
 # Displaying the plot
-plt.savefig('heatmapEasiness.png')
+plt.savefig('imgs/heatmaps/heatmapEasiness.png')
 
 # Generating data for the heat map HEURISTIC
 data = sched_heuristic
@@ -139,7 +140,7 @@ for i in range(len(sched_heuristic)):
                        ha="center", va="center", color="w")
 
 # Displaying the plot
-plt.savefig('heatmapHeuristic.png')
+plt.savefig('imgs/heatmaps/heatmapHeuristic.png')
 
 # Generating data for the heat map STUDENTS
 data = sched_students
@@ -156,7 +157,7 @@ for i in range(len(sched_students)):
                        ha="center", va="center", color="w")
 
 # Displaying the plot
-plt.savefig('heatmapStudents.png')
+plt.savefig('imgs/heatmaps/heatmapStudents.png')
 
 # Generating data for the heat map STUDENTS
 data = occ_1
@@ -176,5 +177,4 @@ for i in range(len(occ_1)):
                        ha="center", va="center", color="w")
 
 # Displaying the plot
-plt.savefig('heatmapOcclusions.png')
-'''
+plt.savefig('imgs/heatmaps/heatmapOcclusions.png')

@@ -18,6 +18,8 @@ img_path = '/home/chiara/DATASETS/images/'   # images are to be downloaded
 # unripe info
 big_dist = []
 big_scores = []
+unripes_tot = []
+ripes_tot = []
 unripe_path = base_path + '/dataset/unripe.json'  # obtained with detectron2 ran on GPU
 with open(unripe_path) as f:
     unripe_annT = json.load(f)
@@ -26,6 +28,8 @@ easy_tot = []
 w = Counter([])
 phases = ['train', 'val', 'test']
 for phase in phases:
+    unripes = []
+    ripes = []
     easy = []
     filepath = base_path + '/scheduling/data_{}/raw/gnnann.json'.format(phase)
     gnnann = []
@@ -47,6 +51,7 @@ for phase in phases:
         dx = get_single_out(anns['image_id'], i, sx)
 
         ripe = anns['bbox'][sx:dx]
+        ripes += [len(ripe)]
         occ = anns['category_id'][sx:dx]
         sched = anns['scheduling'][sx:dx]
         tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes'])) if unripe_ann['file_name'][x] == filename.split('_')[-1]][0]
@@ -55,6 +60,7 @@ for phase in phases:
             unripe = true_unripe(tot_unripe, ripe)
             occ.extend([3] * len(unripe))
             unripe_info = get_info(unripe, occ)
+            unripes += [len(unripe)]
         else:
             unripe_info = []
             unripe = []
@@ -62,21 +68,23 @@ for phase in phases:
         len_ripe_info = len(ripe_info)
 
         ripe_info.extend(unripe_info)
-        min_dist_ripe = min_str_dist(ripe_info, True)['min_dist'][:len_ripe_info]
+        min_dist = min_str_dist(ripe_info, True)['min_dist']
+        min_dist_ripe = min_dist[:len_ripe_info]
         high_dist = [x for x in min_dist_ripe if x > 0.5]
         if len(high_dist) > 0:
             big_dist.append(filename.split('_')[-1])
         ripe_infoT = {k: [dic[k] for dic in ripe_info] for k in ripe_info[0]}
         xy = list(map(list, zip(*[[int(x) for x in ripe_infoT['xc']], [int(y) for y in ripe_infoT['yc']]])))
-        ripe_info = ripe_info[:len_ripe_info]
+        # ripe_info = ripe_info[:len_ripe_info]
 
         coordT = [ripe_infoT['xmin'], ripe_infoT['ymin']]
         coord = [[coordT[0][i], coordT[1][i]] for i in range(len(coordT[0]))]
 
-        dist_score = get_dist_score(min_dist_ripe)
+        dist_score = get_dist_score(min_dist)
         occ_sc = get_occ_score(ripe_info)
+        ripeness = [1] * len(ripe) + [-1] * len(unripe)
 
-        easiness = [dist_score[e] * occ_sc[e] for e in range(len(dist_score))]
+        easiness = [dist_score[e] * occ_sc[e] * ripeness[e] for e in range(len(dist_score))]
         high_score = [x for x in easiness if x > 0.5]
         if len(high_score) > 0:
             big_scores.append(filename.split('_')[-1])
@@ -86,8 +94,9 @@ for phase in phases:
         # balance scores
         distribution = w.most_common()
         easyr = [round(x, 4) for x in easiness]
-        elem = [[y for y in range(len(easyr)) if (distribution[x][0] == easyr[y] and distribution[x][1] > 10)] for x in range(len(distribution))]
-        elem = [item for sublist in elem for item in sublist]
+        elem = [y for y in range(len(easyr))
+                 if easyr[y] > 0.01]
+        #elem = [item for sublist in elem for item in sublist]
         if len(elem) >= len(easiness) - 1:
             continue
         indices = sorted(elem, reverse=True)
@@ -103,13 +112,18 @@ for phase in phases:
             sched.pop(idx)
             coord.pop(idx)'''
 
-        easy += [x for x in easiness]  # round(x, 4)
-        w = Counter(easy)
 
+
+        # easiness = [x * 100 for x in easiness]
         scheduling_easiness = sorted(range(len(easiness)), reverse=True, key=lambda k: easiness[k])
         scheduling_easiness = [x + 1 for x in scheduling_easiness]
 
         scheduling_heuristic = heuristic_sched(min_dist_ripe, occ)
+        scheduling_heuristic = sorted(range(len(scheduling_heuristic)), reverse=True, key=lambda k: scheduling_heuristic[k])
+        scheduling_heuristic = [x + 1 for x in scheduling_heuristic]
+
+        sched = sorted(range(len(sched)), reverse=True, key=lambda k: sched[k])
+        sched = [x + 1 for x in sched]
 
         occ_ann = update_occ(ripe_info)
         occ_leaf = [1] * len(occ_ann)
@@ -118,12 +132,14 @@ for phase in phases:
                 occ_leaf[x]= 0
 
         scheduling_easiness.extend([18] * len(unripe))
-        easiness.extend([0] * len(unripe))
+        # easiness.extend([0] * len(unripe))
         occ_ann.extend([0] * len(unripe))
         occ_leaf.extend([0] * len(unripe))
         scheduling_heuristic.extend([18] * len(unripe))
         sched.extend([18] * len(unripe))
-        ripeness = [1] * len(ripe) + [0] * len(unripe)
+
+        easy += [round(x, 4) for x in easiness]
+        w = Counter(easy)
 
         boxes = ripe
         boxes.extend(unripe)
@@ -141,6 +157,7 @@ for phase in phases:
         occ_leaf = [occ_leaf[h] for h in order]
         easiness = [easiness[h] for h in order]
         xy = [xy[n] for n in order]
+        min_dist = [min_dist[m] for m in order]
 
         # patches
         if device.type == 'cpu':
@@ -150,6 +167,7 @@ for phase in phases:
 
         gnnann.append({
             'img_ann': coord,
+            'min_dist': min_dist,
             'boxes': boxes,
             'sc_ann': scheduling_easiness,
             'students_sc_ann': sched,
@@ -161,12 +179,15 @@ for phase in phases:
             'patches': patches,
             'ripeness': ripeness
         })
-
+    gnnannT = {k: [dic[k] for dic in gnnann] for k in gnnann[0]}
+    maxbox = max([item for sublist in gnnannT['boxes'] for item in sublist])
     one = 1
     w = Counter(easy)
     plt.bar(w.keys(), w.values(), width=0.001)
     plt.savefig('imgs/barEasiness_distributed_traintestval.png')
     easy_tot += easy
+    unripes_tot.append(unripes)
+    ripes_tot.append(ripes)
 
     ''''''
     save_path = base_path + '/dataset/data_{}/raw/gnnann.json'.format(phase)
@@ -174,7 +195,14 @@ for phase in phases:
         json.dump(gnnann, f)
     print(phase + str(len(gnnann)))  # train784, val123, test118
 
-one = 1  # max(easy_tot) = 1.255
+print(max(easy_tot))
 
+# WITH MANY UNRIPES
+# < 0.01 train299, val45, test44, 0.01
+# =< 0.1: train407, val62, test66, 0.5623
+# > 0.1: train87, val13, test14, 1.0
 
-
+# FEW UNRIPES
+# < 0.01 train151, val23, test25
+# < 0.1 train384, val58, test61
+# > 0.1 train784, val123, test118
