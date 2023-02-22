@@ -11,9 +11,13 @@ import config_scheduling
 from utils import get_occlusion1, get_realscheduling, get_whole_scheduling, get_label_scheduling
 import multiprocessing
 from collections import Counter
+from model import GCN_scheduling
+from utils import BatchAccuracy_scheduling
+from dataset import SchedulingDataset
+
 
 with torch.no_grad():
-   torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
 
 
 def train_one_epoch():
@@ -27,7 +31,7 @@ def train_one_epoch():
     storeP = []
     storeT = []
     for i, batch in enumerate(train_loader, 0):
-
+        print(next(model.parameters()).is_cuda)
         # zero the parameter gradients
         optimizer.zero_grad()
 
@@ -90,6 +94,7 @@ def validation():
     storeP = []
 
     for i, vbatch in enumerate(val_loader):
+        print(next(model.parameters()).is_cuda)
         # vbatch.to(device)
         voutputs = model(vbatch)
         weights = torch.ones_like(vbatch.y) / 0.3 + (1.0 - 1.0 / 0.3) * vbatch.y
@@ -138,6 +143,7 @@ def test():
     tot_tnodes = 0.0
 
     for i, tbatch in enumerate(test_loader):
+        print(next(model.parameters()).is_cuda)
         # tbatch.to(device)
         pred = model(tbatch)
         #real_tscheduling += get_realscheduling(pred, tbatch.label, tbatch.batch)
@@ -292,7 +298,6 @@ if __name__ == '__main__':
     #multiprocessing.set_start_method('spawn')
 
     # Tuned Parameters
-
     learningRate = cfg.LR
     hiddenLayers = cfg.HL
     numlayers = cfg.NL
@@ -312,11 +317,11 @@ if __name__ == '__main__':
 
     print("Loading data_scripts...")
     train_path = 'dataset/data_train/'.format(goal)
-    train_dataset = cfg.DATASET(train_path)
+    train_dataset = SchedulingDataset(train_path)
     val_path = 'dataset/data_val/'.format(goal)
-    val_dataset = cfg.DATASET(val_path)
+    val_dataset = SchedulingDataset(val_path)
     test_path = 'dataset/data_test/'.format(goal)
-    test_dataset = cfg.DATASET(test_path)
+    test_dataset = SchedulingDataset(test_path)
 
     train_loader = DataLoader(train_dataset, batch_size=batchSize, shuffle=True)  #, num_workers=2, pin_memory_device='cuda:1', pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=len(val_dataset), shuffle=False)  #, num_workers=2, pin_memory_device='cuda:1', pin_memory=True)
@@ -325,12 +330,11 @@ if __name__ == '__main__':
 
     # Initialize model, optimizer and loss
 
-    model = cfg.MODEL.to(device)
+    model = GCN_scheduling(hiddenLayers, numlayers).to(device)
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, weight_decay=weightDecay)
     scheduler = ReduceLROnPlateau(optimizer)
     criterion = torch.nn.MSELoss()  # torch.nn.BCELoss()  # weight it!! classes are imbalanced
-    batchAccuracy = cfg.ACCURACY()
 
     # Parameters for plots
 
