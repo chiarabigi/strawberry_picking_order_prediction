@@ -1,6 +1,10 @@
 # strawberry_picking_order_prediction
 using GNN 
 
+## Link for the power point with explenation of the problem and questions
+
+https://universityoflincoln-my.sharepoint.com/:p:/g/personal/aghalamzanesfahani_lincoln_ac_uk/EWzrxea-p3ZOm_Q9itl0qBYBnl4xdTWQk9VtweNZXVgs7A?e=vfDBDw
+
 ## Link for the images used in coco_to_gnnann and easiness
 
 https://universityoflincoln-my.sharepoint.com/:f:/g/personal/26701596_students_lincoln_ac_uk/EidUs1e5xIRMmPLYI9tmVpcBF9xqP4B03KFErKaVEK7DyA?e=q8F3Ky
