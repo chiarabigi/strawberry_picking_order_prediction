@@ -58,8 +58,8 @@ def train_one_epoch():
         tot_nodes += len(batch.batch)
         step += 1
 
-        storeT.extend(batch.y.t().tolist()[0])
-        storeP.extend(outputs.t().tolist()[0])
+        storeT += [x for x in batch.y.t().tolist()[0] if x != 0]
+        storeP += [x for x in outputs.t().tolist()[0] if x != 0]
         outputsL = [round(x, 2) for x in outputs.t().tolist()[0]]
         batchyL = [round(x, 2) for x in batch.y.t().tolist()[0]]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
@@ -104,8 +104,8 @@ def validation():
         # occ_1 += get_occlusion1(voutputs, vbatch.info, vbatch.batch)
         tot_vnodes += len(vbatch.batch)
         step += 1
-        storeT.extend(vbatch.y.t().tolist()[0])
-        storeP.extend(voutputs.t().tolist()[0])
+        storeT += [x for x in vbatch.y.t().tolist()[0] if x != 0]
+        storeP += [x for x in voutputs.t().tolist()[0] if x != 0]
         outputsL = [round(x, 2) for x in voutputs.t().tolist()[0]]
         batchyL = [round(x, 2) for x in vbatch.y.t().tolist()[0]]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
@@ -154,8 +154,8 @@ def test():
         #sched_true += s_true
         outputsL = [round(x, 2) for x in pred.t().tolist()[0]]
         batchyL = [round(x, 2) for x in tbatch.y.t().tolist()[0]]
-        storeT.extend(tbatch.y.t().tolist()[0])
-        storeP.extend(pred.t().tolist()[0])
+        storeT += [x for x in tbatch.y.t().tolist()[0] if x != 0]
+        storeP += [x for x in pred.t().tolist()[0] if x != 0]
         matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
         tot_tnodes += len(tbatch.batch)
 

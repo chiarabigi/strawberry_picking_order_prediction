@@ -18,9 +18,9 @@ for phase in phases:
     length.append(len(heuristic_ann))
     easiness_ann += infoT['sc_ann']
     for e in range(len(easiness_ann)):
-        unripe = [x for x in heuristic_ann[e] if x == 18]
+        unripe = [x for x in students_ann[e] if x == 18]
         students_ann[e] = [x for x in students_ann[e] if x != 18]
-        heuristic_ann[e] = [x for x in heuristic_ann[e] if x != 18]
+        heuristic_ann[e] = [x for x in heuristic_ann[e] if x < len(easiness_ann[e]) - len(unripe)]
         easiness_ann[e] = [x for x in easiness_ann[e] if x < len(easiness_ann[e]) - len(unripe)]
 
 sched_students = np.zeros((17, 17))
@@ -42,8 +42,8 @@ fig, ax = plt.subplots()
 plt.imshow(data)
 # Adding details to the plot
 plt.title("Comparison of scheduled strawberries")
-plt.ylabel('easiness_scheduling')
-plt.xlabel('heuristic_scheduling')
+plt.ylabel('heuristic easiness score')
+plt.xlabel('heuristic min max')
 plt.colorbar()
 for i in range(len(sched_heuristic)):
     for j in range(len(sched_heuristic)):
@@ -59,8 +59,8 @@ fig, ax = plt.subplots()
 plt.imshow(data)
 # Adding details to the plot
 plt.title("Comparison of scheduled strawberries")
-plt.ylabel('easiness_scheduling')
-plt.xlabel('students_scheduling')
+plt.ylabel('heuristic easiness score')
+plt.xlabel('students scheduling')
 plt.colorbar()
 for i in range(len(sched_students)):
     for j in range(len(sched_students)):
@@ -76,8 +76,8 @@ fig, ax = plt.subplots()
 plt.imshow(data)
 # Adding details to the plot
 plt.title("Comparison of scheduled strawberries")
-plt.ylabel('heuristic_scheduling')
-plt.xlabel('students_scheduling')
+plt.ylabel('heuristic min max')
+plt.xlabel('students scheduling')
 plt.colorbar()
 for i in range(len(heuristic_students)):
     for j in range(len(heuristic_students)):

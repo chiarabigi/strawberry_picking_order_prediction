@@ -27,7 +27,8 @@ for phase in phases:
 
         ripe = anns['bbox'][sx:dx]
         occ = anns['category_id'][sx:dx]
-        tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes'])) if unripe_ann['file_name'][x] == filename.split('_')[-1]][0]
+        tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes']))
+                      if unripe_ann['file_name'][x] == filename.split('_')[-1]][0]
         sx = dx
         if len(tot_unripe) > 0:
             unripe = true_unripe(tot_unripe, ripe)
@@ -44,4 +45,4 @@ for phase in phases:
         if max(all_dist['dist']) > maxd:
             maxd = max(all_dist['dist'])
 
-print(maxd)
+print(maxd)  # 1314.16032512918

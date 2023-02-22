@@ -55,7 +55,7 @@ for phase in phases:
         ripe = anns['bbox'][sx:dx]
         ripes += [len(ripe)]
         occ = anns['category_id'][sx:dx]
-        sched = anns['scheduling'][sx:dx]
+        students_scheduling = anns['scheduling'][sx:dx]
         tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes'])) if unripe_ann['file_name'][x] == filename.split('_')[-1]][0]
         sx = dx
         if len(tot_unripe) > 0:
@@ -86,7 +86,7 @@ for phase in phases:
         occ_sc = get_occ_score(ripe_info)
         ripeness = [1] * len(ripe) + [0] * len(unripe)
 
-        easiness = [dist_score[e] * occ_sc[e] + ripeness[e] * 0.5 for e in range(len(dist_score))]
+        easiness = [dist_score[e] * occ_sc[e] for e in range(len(dist_score))]
         high_score = [x for x in easiness if x > 0.5]
         if len(high_score) > 0:
             big_scores.append(filename.split('_')[-1])
@@ -119,25 +119,21 @@ for phase in phases:
         scheduling_easiness = sorted(range(len(easiness)), reverse=True, key=lambda k: easiness[k])
         scheduling_easiness = [x + 1 for x in scheduling_easiness]
 
-        scheduling_heuristic = heuristic_sched(min_dist_ripe, occ)
+        scheduling_heuristic = heuristic_sched(min_dist, occ)
         scheduling_heuristic = sorted(range(len(scheduling_heuristic)), reverse=True, key=lambda k: scheduling_heuristic[k])
         scheduling_heuristic = [x + 1 for x in scheduling_heuristic]
-
-        sched = sorted(range(len(sched)), reverse=True, key=lambda k: sched[k])
-        sched = [x + 1 for x in sched]
 
         occ_ann = update_occ(ripe_info)
         occ_leaf = [1] * len(occ_ann)
         for x in range(len(occ_ann)):
             if occ_ann[x] != 1:
-                occ_leaf[x]= 0
+                occ_leaf[x] = 0
 
         scheduling_easiness.extend([18] * len(unripe))
         # easiness.extend([0] * len(unripe))
         occ_ann.extend([0] * len(unripe))
         occ_leaf.extend([0] * len(unripe))
-        scheduling_heuristic.extend([18] * len(unripe))
-        sched.extend([18] * len(unripe))
+        students_scheduling.extend([18] * len(unripe))
 
         easy += easiness[:len_ripe_info]  # [round(x, 4) for x in easiness]
         ueasy += easiness[len_ripe_info:]
@@ -145,7 +141,7 @@ for phase in phases:
 
         boxes = ripe
         boxes.extend(unripe)
-
+        '''
         # shuffle
         order = np.arange(0, len(coord))
         random.shuffle(order)
@@ -153,13 +149,13 @@ for phase in phases:
         coord = [coord[j] for j in order]
         ripeness = [ripeness[j] for j in order]
         scheduling_easiness = [scheduling_easiness[k] for k in order]
-        sched = [sched[k] for k in order]
+        students_scheduling = [students_scheduling[k] for k in order]
         scheduling_heuristic = [scheduling_heuristic[k] for k in order]
         occ_ann = [occ_ann[h] for h in order]
         occ_leaf = [occ_leaf[h] for h in order]
         easiness = [easiness[h] for h in order]
         xy = [xy[n] for n in order]
-        min_dist = [min_dist[m] for m in order]
+        min_dist = [min_dist[m] for m in order]'''
 
         # patches
         if device.type == 'cpu':
@@ -172,7 +168,7 @@ for phase in phases:
             'min_dist': min_dist,
             'boxes': boxes,
             'sc_ann': scheduling_easiness,
-            'students_sc_ann': sched,
+            'students_sc_ann': students_scheduling,
             'heuristic_sc_ann': scheduling_heuristic,
             'occ_ann': occ_ann,
             'occ_score': occ_score,
@@ -183,9 +179,9 @@ for phase in phases:
         })
     gnnannT = {k: [dic[k] for dic in gnnann] for k in gnnann[0]}
     maxbox = max([item for sublist in gnnannT['boxes'] for item in sublist])
-    one = 1
     w = Counter(easy+ueasy)
     plt.bar(w.keys(), w.values(), width=0.001)
+    plt.title('Easiness score distribution. Blue: train. Orange: val. Green: test.')
     plt.savefig('imgs/barEasiness_distributed_traintestval.png')
     easy_tot += easy
     ueasy_tot += ueasy

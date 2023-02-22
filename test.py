@@ -24,7 +24,7 @@ test_loader = DataLoader(test_dataset, batch_size=len(test_dataset),
 model = GCN_scheduling(cfg.HL, cfg.NL).to(device)
 
 
-model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230222_092735.pth'
+model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_20230222_122223.pth'
 model.load_state_dict(torch.load(model_path))
 model.eval()
 sched_true = np.zeros((32, 32))
@@ -38,8 +38,8 @@ for i, tbatch in enumerate(test_loader):
     # tbatch.to(device)
     pred = model(tbatch)
 
-    gt += [x for x in tbatch.y.tolist() if x != 0]
-    y += [x for x in pred.tolist() if x != 0]
+    gt += tbatch.y.tolist()
+    y += pred.tolist()
     sx = 0
     batch_size = int(tbatch.batch[-1]) + 1
 
@@ -94,9 +94,22 @@ for i in range(len(sched_pred) - 1):
 print(f'\n {100 * (abs(sched_pred[-1] - abs(sched_pred[-1] - sched_true[-1]))) / sched_pred[-1]:.4f}% of strawberries predicted as last to be picked (because unripe) is the same as ground truth')
 '''
 wT = Counter([item for sublist in gt for item in sublist])
-plt.bar(wT.keys(), wT.values(), width=0.001)
+value0T = list(wT.values())[list(wT.keys()).index(0)]
+wTk = wT.keys()
+wTv = wT.values()
+list(wTk).remove(0)
+list(wTv).remove(value0T)
+plt.bar(wTk, wTv, width=0.001)
 wP = Counter([item for sublist in y for item in sublist])
-plt.bar(wP.keys(), wP.values(), width=0.001)
+wPk = wP.keys()
+wPv = wP.values()
+try:
+    value0P = list(wP.values())[list(wP.keys()).index(0)]
+    list(wPk).remove(0)
+    list(wPv).remove(value0P)
+except ValueError:
+    a = 'a'
+plt.bar(wPk, wPv, width=0.001)
 #plt.savefig('imgs/testEasiness.png')
 plt.title('Strawberry test easiness score. Blue: gt. Orange: predicted')
 plt.savefig('imgs/truetestEasiness.png')
