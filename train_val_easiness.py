@@ -8,7 +8,6 @@ import os
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import config_scheduling
-import config_scheduling_gpu
 from utils import get_occlusion1, get_realscheduling, get_whole_scheduling, get_label_scheduling
 import multiprocessing
 from collections import Counter
