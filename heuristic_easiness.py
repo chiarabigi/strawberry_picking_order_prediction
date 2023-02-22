@@ -26,6 +26,7 @@ with open(unripe_path) as f:
 unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}
 easy_tot = []
 ueasy_tot = []
+heu_tot = []
 w = Counter([])
 phases = ['train', 'val', 'test']
 for phase in phases:
@@ -33,6 +34,8 @@ for phase in phases:
     ripes = []
     easy = []
     ueasy = []
+    heu = []
+    stu = []
     filepath = base_path + '/scheduling/data_{}/raw/gnnann.json'.format(phase)
     gnnann = []
     json_path = base_path + '/dataset/isamesize_{}.json'.format(phase)
@@ -46,6 +49,8 @@ for phase in phases:
     sx = 0
     for i in range(len(images['id'])):
         filename = images['file_name'][i]
+        if filename.split('_')[-1] == '579.png':
+            continue
         d = Image.open(img_path + filename.split('_')[-1])
         width, height = d.size
         diag = math.sqrt(math.pow(width, 2) + math.pow(height, 2))
@@ -122,6 +127,8 @@ for phase in phases:
         scheduling_heuristic = heuristic_sched(min_dist, occ)
         scheduling_heuristic = sorted(range(len(scheduling_heuristic)), reverse=True, key=lambda k: scheduling_heuristic[k])
         scheduling_heuristic = [x + 1 for x in scheduling_heuristic]
+        heu_score = [(len(scheduling_heuristic) - x) / (len(scheduling_heuristic) - 1) for x in scheduling_heuristic]
+        heu += heu_score
 
         occ_ann = update_occ(ripe_info)
         occ_leaf = [1] * len(occ_ann)
@@ -133,6 +140,12 @@ for phase in phases:
         # easiness.extend([0] * len(unripe))
         occ_ann.extend([0] * len(unripe))
         occ_leaf.extend([0] * len(unripe))
+
+        students_scheduling.extend([len_ripe_info + 1] * len(unripe))
+        stud_score = [(len_ripe_info + 1 - x) / (len_ripe_info + 1 - 1) for x in students_scheduling]
+        stu += stud_score
+
+        students_scheduling = students_scheduling[:len_ripe_info]
         students_scheduling.extend([18] * len(unripe))
 
         easy += easiness[:len_ripe_info]  # [round(x, 4) for x in easiness]
@@ -141,7 +154,7 @@ for phase in phases:
 
         boxes = ripe
         boxes.extend(unripe)
-        '''
+        ''''''
         # shuffle
         order = np.arange(0, len(coord))
         random.shuffle(order)
@@ -155,7 +168,7 @@ for phase in phases:
         occ_leaf = [occ_leaf[h] for h in order]
         easiness = [easiness[h] for h in order]
         xy = [xy[n] for n in order]
-        min_dist = [min_dist[m] for m in order]'''
+        min_dist = [min_dist[m] for m in order]
 
         # patches
         if device.type == 'cpu':
@@ -167,24 +180,28 @@ for phase in phases:
             'img_ann': coord,
             'min_dist': min_dist,
             'boxes': boxes,
-            'sc_ann': scheduling_easiness,
+            'easiness_sc_ann': scheduling_easiness,
             'students_sc_ann': students_scheduling,
             'heuristic_sc_ann': scheduling_heuristic,
+            'stud_score': stud_score,
+            'heu_score': heu_score,
+            'easiness_score': easiness,
             'occ_ann': occ_ann,
             'occ_score': occ_score,
             'occ_leaf': occ_score,
-            'easiness': easiness,
             'patches': patches,
             'ripeness': ripeness
         })
     gnnannT = {k: [dic[k] for dic in gnnann] for k in gnnann[0]}
     maxbox = max([item for sublist in gnnannT['boxes'] for item in sublist])
-    w = Counter(easy+ueasy)
-    plt.bar(w.keys(), w.values(), width=0.001)
-    plt.title('Easiness score distribution. Blue: train. Orange: val. Green: test.')
-    plt.savefig('imgs/barEasiness_distributed_traintestval.png')
+    stu0 = [x for x in stu if x != 0]
+    w = Counter(stu0)
+    plt.bar(w.keys(), w.values(), width=0.01)
+    plt.title('Students score distribution.')
+    plt.savefig('imgs/barStudentsScore_distributed_traintestval.png')
     easy_tot += easy
     ueasy_tot += ueasy
+    heu_tot += heu
     unripes_tot.append(unripes)
     ripes_tot.append(ripes)
 

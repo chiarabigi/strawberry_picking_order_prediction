@@ -13,6 +13,7 @@ import multiprocessing
 from collections import Counter
 from model import GCN_scheduling
 from dataset import SchedulingDataset
+from customMSE import CustomMSE
 
 
 with torch.no_grad():
@@ -30,7 +31,7 @@ def train_one_epoch():
     storeP = []
     storeT = []
     for i, batch in enumerate(train_loader, 0):
-        print(next(model.parameters()).is_cuda)
+        # print(next(model.parameters()).is_cuda)
         # zero the parameter gradients
         optimizer.zero_grad()
 
@@ -93,7 +94,7 @@ def validation():
     storeP = []
 
     for i, vbatch in enumerate(val_loader):
-        print(next(model.parameters()).is_cuda)
+        # print(next(model.parameters()).is_cuda)
         # vbatch.to(device)
         voutputs = model(vbatch)
         weights = torch.ones_like(vbatch.y) / 0.3 + (1.0 - 1.0 / 0.3) * vbatch.y
@@ -142,7 +143,7 @@ def test():
     tot_tnodes = 0.0
 
     for i, tbatch in enumerate(test_loader):
-        print(next(model.parameters()).is_cuda)
+        # print(next(model.parameters()).is_cuda)
         # tbatch.to(device)
         pred = model(tbatch)
         #real_tscheduling += get_realscheduling(pred, tbatch.label, tbatch.batch)
@@ -333,7 +334,7 @@ if __name__ == '__main__':
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, weight_decay=weightDecay)
     scheduler = ReduceLROnPlateau(optimizer)
-    criterion = torch.nn.BCELoss()  # torch.nn.MSELoss()
+    criterion = CustomMSE()
 
     # Parameters for plots
 

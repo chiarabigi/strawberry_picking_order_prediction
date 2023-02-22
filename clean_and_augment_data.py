@@ -32,6 +32,8 @@ for phase in phases:
         key = list(anns.keys())[0]
         rep = 1
         file_name = anns[key]['filename']
+        if file_name == '579.png':
+            print(0)
         image = root_path + file_name
         width, height = Image.open(image).size
         if height != 720:
@@ -98,10 +100,10 @@ for phase in phases:
             image_id += 1
 
             processed += 1
-    ''''''
+    '''
     with open(json_file, "w") as f:
         json_str = json.dumps(res_file)
-        f.write(json_str)
+        f.write(json_str)'''
 
     print("Processed {} {} images...".format(processed, phase))
 print("Done.")

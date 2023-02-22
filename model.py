@@ -8,7 +8,7 @@ class GCN_scheduling(torch.nn.Module):
     def __init__(self, hidden_layers, num_layers):
         super(GCN_scheduling, self).__init__()
 
-        self.nfeat = 4  # number of node features
+        self.nfeat = 5  # number of node features
         self.nhead = 1
         self.edge_dim = 1  # size of edge feature
 
@@ -44,6 +44,7 @@ class GCN_scheduling(torch.nn.Module):
         #x5 = self.customleaky(x4)
         #x5 = self.prelu(x4)
         #x5 = self.lin(x4)
+        #x5 = F.softmax(x4, dim=0)
         return x5
 
 

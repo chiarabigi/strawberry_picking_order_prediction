@@ -38,17 +38,23 @@ class SchedulingDataset(Dataset):
             box_obj = anns[index]['boxes']
             coord = anns[index]['img_ann']
             min_dist = anns[index]['min_dist']
-            sched = anns[index]['sc_ann']
+            patches = anns[index]['patches']
+            ripeness = anns[index]['ripeness']
+
             occ = anns[index]['occ_ann']
             occ_score = anns[index]['occ_score']
             occ_leaf = anns[index]['occ_leaf']
-            easiness = anns[index]['easiness']
-            patches = anns[index]['patches']
-            ripeness = anns[index]['ripeness']
+
             students_scheduling = anns[index]['students_sc_ann']
             heuristic_scheduling = anns[index]['heuristic_sc_ann']
+            easiness_scheduling = anns[index]['easiness_sc_ann']
+
+            stud_score = anns[index]['stud_score']
+            heu_score = anns[index]['heu_score']
+            easiness_score = anns[index]['easiness_score']
+
             # Get node features
-            node_feats = self._get_node_features(min_dist, occ_score, ripeness, occ_leaf, patches)
+            node_feats = self._get_node_features(coord, occ_score, ripeness, occ_leaf, patches)
             # Get edge features and adjacency info
             edge_feats, edge_index = self.knn(box_obj)
 
@@ -56,11 +62,10 @@ class SchedulingDataset(Dataset):
             data = Data(x=node_feats,
                         edge_index=edge_index,
                         edge_attr=edge_feats,
-                        y=torch.tensor(easiness, dtype=torch.float32, device=device).unsqueeze(1),
-                        # scheduling=scheduling,  # 1 0 classes
+                        y=torch.tensor(heu_score, dtype=torch.float32, device=device).unsqueeze(1),
                         students_ann=torch.tensor(students_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
                         heuristic_ann=torch.tensor(heuristic_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
-                        label=torch.tensor(sched, dtype=torch.int32, device=device).unsqueeze(1),  # gt
+                        easiness_ann=torch.tensor(easiness_scheduling, dtype=torch.int32, device=device).unsqueeze(1),  # gt
                         info=torch.tensor(occ, device=device).unsqueeze(1)
                         )
 
@@ -74,7 +79,7 @@ class SchedulingDataset(Dataset):
             idx += 1
 
 
-    def _get_node_features(self, dist, occ, ripenes, occ_leaf, patches):
+    def _get_node_features(self, box, occ, ripenes, occ_leaf, patches):
         """
         This will return a matrix / 2d array of the shape
         [Number of Nodes, Node Feature size]
@@ -87,7 +92,7 @@ class SchedulingDataset(Dataset):
                 patchesa = patches[a]
             else:
                 patchesa = patches
-            node_feats = [dist[a], occ[a], occ_leaf[a], ripenes[a]]
+            node_feats = [box[a][0], box[a][1], occ[a], occ_leaf[a], ripenes[a]]
             # Feature 0: min dist
             # Feature 0: x
             # node_feats.append(box[a][0])
@@ -123,14 +128,25 @@ class SchedulingDataset(Dataset):
             edge_indices = diag_indices
         min_dist = [round(x, 7) for x in min_dist]
         edge_feats = [round(x, 7) for x in edge_feats]
-        edge_feats.extend([x for x in min_dist if x not in edge_feats])
-        edge_indices.extend([x for x in min_edges if x not in edge_indices])
+        add_edge = [x for x in min_edges if x not in edge_indices]
+        add_idx = [min_edges.index(x) for x in add_edge]
+        add_feats = [min_dist[x] for x in add_idx]
+        edge_feats.extend(add_feats)
+        edge_indices.extend(add_edge)
 
         edge_indices = torch.tensor(edge_indices, dtype=torch.float32, device=device)
         edge_indices = edge_indices.t().to(torch.long).view(2, -1)
         edge_feats = torch.tensor(edge_feats, dtype=torch.float32, device=device)
         return edge_feats, edge_indices
 
+    def get_scaled_scheduling(self, students_scheduling):
+        unripe = [x for x in students_scheduling if x == 18]
+        len_ripe = len(students_scheduling) - len(unripe)
+        for s in range(len(students_scheduling)):
+            if students_scheduling[s] == 18:
+                students_scheduling[s] = len_ripe
+        y = [(len_ripe - x) / (len_ripe - 1) for x in students_scheduling]
+        return torch.tensor(y, dtype=torch.float32, device=device).unsqueeze(1)
 
     def _get_scheduling(self, label):
         for i in range(len(label)):
