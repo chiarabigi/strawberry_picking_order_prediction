@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GATConv, Linear, GCNConv
+from torch_geometric.utils import softmax
 from customLeaky import CustomLeakyReLU
 
 
@@ -19,33 +20,25 @@ class GCN_scheduling(torch.nn.Module):
             self.convs.append(
                 GCNConv(self.nhead*hidden_layers, hidden_layers))
 
-        self.conv2 = GCNConv(self.nhead*hidden_layers, 1)
+        self.conv2 = GATConv(self.nhead*hidden_layers, 1, concat=False)
 
         self.linear = Linear(1, 1, bias=False, weight_initializer='glorot')
 
         self.sigmoid = torch.nn.Sigmoid()
-        self.customSigmoid = mySigmoid(2)
-        self.customleaky = CustomLeakyReLU()
-        self.leaky = torch.nn.LeakyReLU(0.01)
-        self.prelu = torch.nn.PReLU()
-        self.lin = torch.nn.Linear(1, 1)
 
     def forward(self, data):
 
         x, edge_index, edge_weight, batch = data.x, data.edge_index, data.edge_attr, data.batch
 
         x1 = self.conv1(x, edge_index, edge_weight)  # new node features
-        x2 = self.prelu(x1)
+        x2 = F.elu(x1)
 
         x3 = F.dropout(x2, p=0.2, training=self.training)
         x4 = self.conv2(x3, edge_index, edge_weight)
-        #x5 = self.linear(x4)
-        x5 = self.sigmoid(x4)
-        #x5 = self.customleaky(x4)
-        #x5 = self.prelu(x4)
-        #x5 = self.lin(x4)
-        #x5 = F.softmax(x4, dim=0)
-        return x5
+
+        x5 = self.linear(x4)
+        x6 = self.sigmoid(x5)
+        return x6
 
 
 class mySigmoid(torch.nn.Module):

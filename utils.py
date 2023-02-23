@@ -292,8 +292,8 @@ def heuristic_sched(all_ripe_min_dist, occ_ann):
 
     return scheduling_script1
 
-## For metrics
 
+## For metrics
 def get_occlusion1(output, occ, batch):
     sx = 0
     batch_size = int(batch[-1]) + 1

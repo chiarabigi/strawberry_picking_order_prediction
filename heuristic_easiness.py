@@ -3,44 +3,39 @@ import os
 import torch
 import random
 import numpy as np
-from PIL import Image
-import math
 import matplotlib.pyplot as plt
 from collections import Counter
 from utils import get_single_out, true_unripe, get_info, min_str_dist, get_dist_score, get_occ_score, update_occ, heuristic_sched, get_sched, get_patches
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
-print(device)
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 img_path = '/home/chiara/DATASETS/images/'   # images are to be downloaded
 
 # unripe info
-big_dist = []
-big_scores = []
-unripes_tot = []
-ripes_tot = []
-unripe_path = base_path + '/dataset/unripe.json'  # obtained with detectron2 ran on GPU
+unripe_path = base_path + '/dataset/unripe.json'  # obtained with detectron2
 with open(unripe_path) as f:
-    unripe_annT = json.load(f)
-unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}
-easy_tot = []
-ueasy_tot = []
-heu_tot = []
-w = Counter([])
+    unripe_annT = json.load(f)  # list of dictionaries
+unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}  # dictionary of lists
+
+
 phases = ['train', 'val', 'test']
 for phase in phases:
-    unripes = []
-    ripes = []
-    easy = []
-    ueasy = []
-    heu = []
-    stu = []
-    filepath = base_path + '/scheduling/data_{}/raw/gnnann.json'.format(phase)
-    gnnann = []
-    json_path = base_path + '/dataset/isamesize_{}.json'.format(phase)
+    # w = Counter([])  # initialization for first iteration, if you want to have balanced easiness score values
+    gnnann = []  # where to store each graph information
+
+    # for the bars plots:
+    easyS = []
+    easyP = []
+    heuS = []
+    stuS = []
+    heuP = []
+    stuP = []
+
+    filepath = base_path + '/scheduling/data_{}/raw/gnnann.json'.format(phase)  # where to save the annotation
+    json_path = base_path + '/dataset/instances_{}.json'.format(phase)
     with open(json_path) as f:
-        json_file = json.load(f)
+        json_file = json.load(f)  # annotations in COCO format
     imagesT = json_file['images']
     images = {k: [dic[k] for dic in imagesT] for k in imagesT[0]}
     annsT = json_file['annotations']
@@ -49,65 +44,56 @@ for phase in phases:
     sx = 0
     for i in range(len(images['id'])):
         filename = images['file_name'][i]
-        if filename.split('_')[-1] == '579.png':
-            continue
-        d = Image.open(img_path + filename.split('_')[-1])
-        width, height = d.size
-        diag = math.sqrt(math.pow(width, 2) + math.pow(height, 2))
 
+        # from the list with all the annotations, extract just the ones of the image in consideration
         dx = get_single_out(anns['image_id'], i, sx)
-
         ripe = anns['bbox'][sx:dx]
-        ripes += [len(ripe)]
         occ = anns['category_id'][sx:dx]
         students_scheduling = anns['scheduling'][sx:dx]
-        tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes'])) if unripe_ann['file_name'][x] == filename.split('_')[-1]][0]
+        tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes']))
+                      if unripe_ann['file_name'][x] == filename][0]
         sx = dx
+
         if len(tot_unripe) > 0:
             unripe = true_unripe(tot_unripe, ripe)
             occ.extend([3] * len(unripe))
             unripe_info = get_info(unripe, occ)
-            unripes += [len(unripe)]
         else:
             unripe_info = []
             unripe = []
         ripe_info = get_info(ripe, occ)
-        len_ripe_info = len(ripe_info)
-
         ripe_info.extend(unripe_info)
-        min_dist = min_str_dist(ripe_info, True)['min_dist']
-        min_dist_ripe = min_dist[:len_ripe_info]
-        high_dist = [x for x in min_dist_ripe if x > 0.5]
-        if len(high_dist) > 0:
-            big_dist.append(filename.split('_')[-1])
-        ripe_infoT = {k: [dic[k] for dic in ripe_info] for k in ripe_info[0]}
-        xy = list(map(list, zip(*[[int(x) for x in ripe_infoT['xc']], [int(y) for y in ripe_infoT['yc']]])))
-        # ripe_info = ripe_info[:len_ripe_info]
 
+        min_dist = min_str_dist(ripe_info, True)['min_dist']
+        min_dist_ripe = min_dist[:len(ripe)]
+
+        ripe_infoT = {k: [dic[k] for dic in ripe_info] for k in ripe_info[0]}
+        # save x,y coordinates of the center to later extract patches of images around those
+        xy = list(map(list, zip(*[[int(x) for x in ripe_infoT['xc']], [int(y) for y in ripe_infoT['yc']]])))
+
+        # save coordinates of x,y min to use as node features
         coordT = [ripe_infoT['xmin'], ripe_infoT['ymin']]
         coord = [[coordT[0][i], coordT[1][i]] for i in range(len(coordT[0]))]
+        # save percentage of berry occlusion to use as node feature
+        occ_score = ripe_infoT['occlusion_by_berry%']
 
+        # EASINESS SCORE
         dist_score = get_dist_score(min_dist)
         occ_sc = get_occ_score(ripe_info)
         ripeness = [1] * len(ripe) + [0] * len(unripe)
-
         easiness = [dist_score[e] * occ_sc[e] for e in range(len(dist_score))]
-        high_score = [x for x in easiness if x > 0.5]
-        if len(high_score) > 0:
-            big_scores.append(filename.split('_')[-1])
-        occ_score = ripe_infoT['occlusion_by_berry%']
 
         '''
-        # balance scores
+        # balance scores: are there some scores you want to discard?
         distribution = w.most_common()
         easyr = [round(x, 4) for x in easiness]
         elem = [y for y in range(len(easyr))
-                 if easyr[y] > 0.01]
+                 if easyr[y] > 0.01]  # indices to remove
         #elem = [item for sublist in elem for item in sublist]
-        if len(elem) >= len(easiness) - 1:
+        if len(elem) >= len(easiness) - 1:  # don't add anything of this graph if you remain with one or no berry
             continue
         indices = sorted(elem, reverse=True)
-        for idx in indices:
+        for idx in indices:  # remove information of strawberries
             easiness.pop(idx)
             ripe.pop(idx)
             ripe_info.pop(idx)
@@ -119,109 +105,145 @@ for phase in phases:
             sched.pop(idx)
             coord.pop(idx)'''
 
-        # easiness = [(x + 1) / 2 for x in easiness]
-        # easiness = [x * 100 for x in easiness]
+        # scheduling from easiness score: first to pick has highest score, and so on
         scheduling_easiness = sorted(range(len(easiness)), reverse=True, key=lambda k: easiness[k])
         scheduling_easiness = [x + 1 for x in scheduling_easiness]
+        # get a vector of probabilities that sum to one. Highest probability belongs to highest score
+        easiness_prob = [(len(scheduling_easiness) + 1 - x) / sum(scheduling_easiness) for x in scheduling_easiness]
+        easyS += easiness  # save for plot
+        easyP += easiness_prob
 
+        # scheduling from heuristic min-max approach: first to pick is most isolated & non occluded strawberry
         scheduling_heuristic = heuristic_sched(min_dist, occ)
         scheduling_heuristic = sorted(range(len(scheduling_heuristic)), reverse=True, key=lambda k: scheduling_heuristic[k])
-        scheduling_heuristic = [x + 1 for x in scheduling_heuristic]
+        scheduling_heuristic = [x + 1 for x in scheduling_heuristic]  # we want scheduling to start from 1, not 0
+        # get score [0, 1]. 1 = first to be picked; 0 = unripe; the rest are equally distances
         heu_score = [(len(scheduling_heuristic) - x) / (len(scheduling_heuristic) - 1) for x in scheduling_heuristic]
-        heu += heu_score
+        heu_prob = [(len(scheduling_heuristic) + 1 - x) / sum(scheduling_heuristic) for x in scheduling_heuristic]
+        heuP += heu_prob  # save for plot
+        heuS += heu_score
 
+        # get score and probability of annotated scheduling as well
+        students_scheduling.extend([len(ripe) + 1] * len(unripe))  # because there was no annotation for unripe berries
+        stud_score = [(len(ripe) + 1 - x) / (len(ripe) + 1 - 1) for x in students_scheduling]
+        stud_prob = [(len(ripe) + 1 - x) / sum(students_scheduling) for x in students_scheduling]
+        stuP += stud_prob  # save for plot
+        stuS += stud_score
+
+        # previous occlusion options:
+        # 'occluded by leaf', 'occluding', 'occluded by leaf/occluding', 'non occluded', 'occluded by berry'
+        # updated occlusion options: 'non occluded', 'occluded by leaf', 'occluded by berry'
         occ_ann = update_occ(ripe_info)
+        # get binary information of occlusion by leaf
         occ_leaf = [1] * len(occ_ann)
         for x in range(len(occ_ann)):
             if occ_ann[x] != 1:
                 occ_leaf[x] = 0
 
-        scheduling_easiness.extend([18] * len(unripe))
-        # easiness.extend([0] * len(unripe))
-        occ_ann.extend([0] * len(unripe))
-        occ_leaf.extend([0] * len(unripe))
-
-        students_scheduling.extend([len_ripe_info + 1] * len(unripe))
-        stud_score = [(len_ripe_info + 1 - x) / (len_ripe_info + 1 - 1) for x in students_scheduling]
-        stu += stud_score
-
-        students_scheduling = students_scheduling[:len_ripe_info]
-        students_scheduling.extend([18] * len(unripe))
-
-        easy += easiness[:len_ripe_info]  # [round(x, 4) for x in easiness]
-        ueasy += easiness[len_ripe_info:]
-        w = Counter(easy)
-
+        # save bbox coordinate information to use as node features
         boxes = ripe
         boxes.extend(unripe)
-        ''''''
-        # shuffle
+
+        # shuffle! Some students annotation are ordered, you don't want the model to learn first to pick = node number 1
         order = np.arange(0, len(coord))
         random.shuffle(order)
         boxes = [boxes[j] for j in order]
         coord = [coord[j] for j in order]
         ripeness = [ripeness[j] for j in order]
+        occ_ann = [occ_ann[h] for h in order]
+        occ_leaf = [occ_leaf[h] for h in order]
+        occ_score = [occ_score[h] for h in order]
+        xy = [xy[n] for n in order]
+        min_dist = [min_dist[m] for m in order]
         scheduling_easiness = [scheduling_easiness[k] for k in order]
         students_scheduling = [students_scheduling[k] for k in order]
         scheduling_heuristic = [scheduling_heuristic[k] for k in order]
-        occ_ann = [occ_ann[h] for h in order]
-        occ_leaf = [occ_leaf[h] for h in order]
         easiness = [easiness[h] for h in order]
-        xy = [xy[n] for n in order]
-        min_dist = [min_dist[m] for m in order]
+        stud_score = [stud_score[h] for h in order]
+        heu_score = [heu_score[h] for h in order]
+        easiness_prob = [easiness_prob[h] for h in order]
+        stud_prob = [stud_prob[h] for h in order]
+        heu_prob = [heu_prob[h] for h in order]
 
-        # patches
-        if device.type == 'cpu':
-            patches = []
-        else:
-            patches = []  # get_patches(xy, d)
+        # patches (not now, first let's obtain a good model without it)
+        patches = []  # get_patches(xy, d)
 
         gnnann.append({
             'img_ann': coord,
             'min_dist': min_dist,
             'boxes': boxes,
+            'ripeness': ripeness,
+            'patches': patches,
+            'occ_ann': occ_ann,
+            'occ_score': occ_score,
+            'occ_leaf': occ_leaf,
             'easiness_sc_ann': scheduling_easiness,
             'students_sc_ann': students_scheduling,
             'heuristic_sc_ann': scheduling_heuristic,
             'stud_score': stud_score,
             'heu_score': heu_score,
             'easiness_score': easiness,
-            'occ_ann': occ_ann,
-            'occ_score': occ_score,
-            'occ_leaf': occ_score,
-            'patches': patches,
-            'ripeness': ripeness
+            'stud_prob': stud_prob,
+            'heu_prob': heu_prob,
+            'easiness_prob': easiness_prob
         })
-    gnnannT = {k: [dic[k] for dic in gnnann] for k in gnnann[0]}
-    maxbox = max([item for sublist in gnnannT['boxes'] for item in sublist])
-    stu0 = [x for x in stu if x != 0]
-    w = Counter(stu0)
-    plt.bar(w.keys(), w.values(), width=0.01)
-    plt.title('Students score distribution.')
-    plt.savefig('imgs/barStudentsScore_distributed_traintestval.png')
-    easy_tot += easy
-    ueasy_tot += ueasy
-    heu_tot += heu
-    unripes_tot.append(unripes)
-    ripes_tot.append(ripes)
 
-    ''''''
+    ''''''  # save annotation of graphs
     save_path = base_path + '/dataset/data_{}/raw/gnnann.json'.format(phase)
     with open(save_path, 'w') as f:
         json.dump(gnnann, f)
-    print(phase + str(len(gnnann)))  # train784, val123, test118
+    print(phase + str(len(gnnann)))
 
-print(max(easy_tot))
-print(min([x for x in easy_tot if x != 0]))
-print(max(ueasy_tot))
-print(min(ueasy_tot))
-one = 1
-# WITH MANY UNRIPES
-# < 0.01 train299, val45, test44, 0.01
-# =< 0.1: train407, val62, test66, 0.5623
-# > 0.1: train87, val13, test14, 1.0
+    # plot distribution of scores / probabilities. Blue: train, orange:val, green: test
+    y = Counter(stuP)
+    plt.figure(1)
+    plt.bar(y.keys(), y.values(), width=0.01)
 
-# FEW UNRIPES
-# < 0.01 train151, val23, test25
-# < 0.1 train384, val58, test61
-# > 0.1 train784, val123, test118
+    y = Counter(stuS)
+    plt.figure(2)
+    plt.bar(y.keys(), y.values(), width=0.01)
+
+    y = Counter(heuP)
+    plt.figure(3)
+    plt.bar(y.keys(), y.values(), width=0.01)
+
+    y = Counter(heuS)
+    plt.figure(4)
+    plt.bar(y.keys(), y.values(), width=0.01)
+
+    y = Counter(easyP)
+    plt.figure(5)
+    plt.bar(y.keys(), y.values(), width=0.01)
+
+    y = Counter(easyS)
+    plt.figure(6)
+    plt.bar(y.keys(), y.values(), width=0.01)
+
+plt.figure(1)
+plt.title('Students probabilities distribution.')
+plt.savefig('imgs/data_bars/barStudentsProb_traintestval.png')
+
+plt.figure(2)
+plt.title('Students score distribution.')
+plt.savefig('imgs/data_bars/barStudentsScore_traintestval.png')
+
+plt.figure(3)
+plt.title('Heuristic min-max probabilities distribution.')
+plt.savefig('imgs/data_bars/barHeuristicProb_traintestval.png')
+
+plt.figure(4)
+plt.title('Heuristic min-max score distribution.')
+plt.savefig('imgs/data_bars/barHeuristicScore_traintestval.png')
+
+plt.figure(5)
+plt.title('Heuristic easiness  probabilities distribution.')
+plt.savefig('imgs/data_bars/barEasinessProb_traintestval.png')
+
+plt.figure(6)
+plt.title('Heuristic easiness score distribution.')
+plt.savefig('imgs/data_bars/barEasinessScore_traintestval.png')
+
+
+
+# Here are some files that produced big easiness score. Can be used for data augmentation
+# big_scores = ['424.png', '442.png', '627.png', '573.png', '2390.png', '500.png', '524.png', '790.png', '1585.png', '366.png', '1569.png', '609.png', '473.png', '204.png', '427.png', '1575.png', '1120.png', '1543.png', '279.png', '458.png', '512.png', '118.png', '586.png', '437.png', '568.png', '555.png', '402.png', '798.png', '506.png', '336.png', '1658.png', '675.png', '1508.png', '444.png', '481.png', '254.png', '1524.png', '523.png']
