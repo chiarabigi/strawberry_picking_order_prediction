@@ -39,13 +39,3 @@ class GCN_scheduling(torch.nn.Module):
         x5 = self.linear(x4)
         x6 = self.sigmoid(x5)
         return x6
-
-
-class mySigmoid(torch.nn.Module):
-    def __init__(self, beta):
-        super(mySigmoid, self).__init__()
-        self.beta = beta
-    def forward(self, data):
-        x = data - self.beta
-        output = 1 / (1 + torch.exp(-x))
-        return output

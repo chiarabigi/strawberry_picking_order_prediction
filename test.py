@@ -4,7 +4,7 @@ from torch_geometric.loader import DataLoader
 import config_scheduling as cfg
 from model import GCN_scheduling
 import json
-from utils import get_single_out
+from utils.utils import get_single_out
 import matplotlib.pyplot as plt
 from collections import Counter
 from dataset import SchedulingDataset
