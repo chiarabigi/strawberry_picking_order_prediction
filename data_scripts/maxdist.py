@@ -3,10 +3,11 @@ Do you want to know what's the maximum distance between the strawberries?
 Remember to comment the division by the maximum distance in utils.edges.min_str_dist
 '''
 import json
+import os
 from utils.utils import get_single_out, true_unripe, get_info
 from utils.edges import min_str_dist
 
-base_path = '/home/chiara/strawberry_picking_order_prediction/'  # images are to be downloaded
+base_path = os.path.dirname(os.path.abspath(__file__)).strip('data_scripts') + ''  # images are to be downloaded
 
 # unripe info
 unripe_path = base_path + 'dataset/unripe.json'  # obtained with detectron2 ran on GPU
@@ -17,7 +18,7 @@ unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}
 maxd = 0
 phases = ['train', 'val', 'test']
 for phase in phases:
-    json_path = base_path + 'dataset/isamesize_{}.json'.format(phase)
+    json_path = base_path + 'dataset/instances_{}.json'.format(phase)
     with open(json_path) as f:
         json_file = json.load(f)
     imagesT = json_file['images']

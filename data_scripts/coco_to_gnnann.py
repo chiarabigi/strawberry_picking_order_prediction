@@ -10,7 +10,7 @@ from utils.edges import min_str_dist
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
-base_path = os.path.dirname(os.path.abspath(__file__))
+base_path = os.path.dirname(os.path.abspath(__file__)).strip('data_scripts') + ''
 img_path = '/home/chiara/DATASETS/images/'   # images are to be downloaded
 
 # unripe info

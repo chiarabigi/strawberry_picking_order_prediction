@@ -6,11 +6,9 @@ from datetime import datetime
 import os
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-import config_scheduling as cfg
+import config as cfg
 from utils.metrics import get_comparison, plot_heatmap
 from collections import Counter
-from model import GCN_scheduling
-from dataset import SchedulingDataset
 
 
 with torch.no_grad():
@@ -288,11 +286,11 @@ if __name__ == '__main__':
     # Load Dataset
     print("Loading data_scripts...")
     train_path = 'dataset/data_train/'
-    train_dataset = SchedulingDataset(train_path)
+    train_dataset = cfg.DATASET(train_path)
     val_path = 'dataset/data_val/'
-    val_dataset = SchedulingDataset(val_path)
+    val_dataset = cfg.DATASET(val_path)
     test_path = 'dataset/data_test/'
-    test_dataset = SchedulingDataset(test_path)
+    test_dataset = cfg.DATASET(test_path)
 
     train_loader = DataLoader(train_dataset, batch_size=batchSize, shuffle=True)  #, num_workers=2, pin_memory_device='cuda:1', pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=len(val_dataset), shuffle=False)  #, num_workers=2, pin_memory_device='cuda:1', pin_memory=True)
@@ -300,13 +298,11 @@ if __name__ == '__main__':
     print("Done!")
 
     # Initialize model, optimizer and loss
-    model = GCN_scheduling(hiddenLayers, numlayers).to(device)
+    model = cfg.MODEL(hiddenLayers, numlayers).to(device)
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=learningRate, weight_decay=weightDecay)
     scheduler = ReduceLROnPlateau(optimizer)
-    criterion = torch.nn.BCELoss()
-    # torch.nn.KLDivLoss(reduction='batchmean') if gt is probabilities
-    # torch.nn.MSE() if gt is score
+    criterion = cfg.LOSS
 
     # Parameters for plots
     y_loss = {}

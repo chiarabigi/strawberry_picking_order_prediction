@@ -11,7 +11,7 @@ import copy
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
-class SchedulingDataset(Dataset):
+class Scheduling01ClassDataset(Dataset):
     def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
         super().__init__(root, transform, pre_transform, pre_filter)
 
@@ -51,27 +51,21 @@ class SchedulingDataset(Dataset):
             heuristic_scheduling = anns[index]['heuristic_sc_ann']
             easiness_scheduling = anns[index]['easiness_sc_ann']
 
-            stud_score = anns[index]['stud_score']
-            heu_score = anns[index]['heu_score']
-            easiness_score = anns[index]['easiness_score']
-
             stud_prob = anns[index]['stud_prob']
-            heu_prob = anns[index]['heu_prob']
-            easiness_prob = anns[index]['easiness_prob']
 
             # Get node features
             node_feats = self._get_node_features(box_obj, occ_score, ripeness, occ_leaf, patches)
             # Get edge features and adjacency info
             edge_feats, edge_index = self.knn(box_obj)
-            # what do you want to use as ground truth?? Is it a score, a probability, or a 0/1 class?
-            y = self._get_01classes(easiness_scheduling)
+            # Ground Truth
+            y = self._get_01classes(students_scheduling)
 
             # Create data object
             data = Data(x=node_feats,
                         edge_index=edge_index,
                         edge_attr=edge_feats,
-                        y=torch.tensor(easiness_score, dtype=torch.float32, device=device).unsqueeze(1),
-                        students_ann=torch.tensor(students_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
+                        y=y,
+                        students_ann=torch.tensor(stud_prob, dtype=torch.float32, device=device).unsqueeze(1),
                         heuristic_ann=torch.tensor(heuristic_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
                         easiness_ann=torch.tensor(easiness_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
                         info=torch.tensor(occ, device=device).unsqueeze(1)

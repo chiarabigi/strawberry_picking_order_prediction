@@ -64,7 +64,6 @@ def plot_heatmap(matrix, y_ticks, name):
     fig, ax = plt.subplots()
     plt.imshow(data)
     # Adding details to the plot
-    plt.suptitle('% of predicted scheduling is actually: ' + name)
     plt.xlabel('Predicted scheduling')
     plt.ylabel(name)
     # Show all ticks and label them with the respective list entries
@@ -74,15 +73,19 @@ def plot_heatmap(matrix, y_ticks, name):
     for i in range(len(matrix)):
         for j in range(len(matrix[i])):
             if sum(matrix[:, j]) == 0:
-                percentage_matrix[i, j] = 0
+                value = 0
             else:
-                percentage_matrix[i, j] = int(100 * matrix[i, j] / sum(matrix[:, j]))
-            text = ax.text(j, i, percentage_matrix[i, j],
+                value = int(100 * matrix[i, j] / sum(matrix[:, j]))
+            percentage_matrix[i, j] = value
+            text = ax.text(j, i, value,
                            ha="center", va="center", color="w", fontsize='xx-small')
 
     if len(matrix[0]) == len(matrix[:, 0]):
         diag = sum(percentage_matrix[i, i] for i in range(len(matrix))) / len(matrix)
+        plt.suptitle('% of predicted scheduling is actually: ' + name)
         plt.title('% of correspondence: {}'.format(diag))
+    else:
+        plt.title('% of occlusion property for each scheduling prediction')
 
     # Displaying the plot
     plt.savefig(base_path.strip('utils') + '/imgs/heatmaps/heatmap{}.png'.format(name))
