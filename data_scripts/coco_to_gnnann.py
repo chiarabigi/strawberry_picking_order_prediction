@@ -11,7 +11,7 @@ from utils.edges import min_str_dist
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
-base_path = os.path.dirname(os.path.abspath(__file__)).strip('data_scripts') + ''
+base_path = os.path.dirname(os.path.abspath(__file__)).strip('data_scripts')
 img_path = '/home/chiara/DATASETS/images/'   # images are to be downloaded
 
 # unripe info
@@ -223,27 +223,27 @@ for phase in phases:
 
 plt.figure(1)
 plt.title('Students probabilities distribution.')
-plt.savefig('imgs/data_bars/barStudentsProb_traintestval.png')
+plt.savefig(base_path + 'imgs/data_bars/barStudentsProb_traintestval.png')
 
 plt.figure(2)
 plt.title('Students score distribution.')
-plt.savefig('imgs/data_bars/barStudentsScore_traintestval.png')
+plt.savefig(base_path + 'imgs/data_bars/barStudentsScore_traintestval.png')
 
 plt.figure(3)
 plt.title('Heuristic min-max probabilities distribution.')
-plt.savefig('imgs/data_bars/barHeuristicProb_traintestval.png')
+plt.savefig(base_path + 'imgs/data_bars/barHeuristicProb_traintestval.png')
 
 plt.figure(4)
 plt.title('Heuristic min-max score distribution.')
-plt.savefig('imgs/data_bars/barHeuristicScore_traintestval.png')
+plt.savefig(base_path + 'imgs/data_bars/barHeuristicScore_traintestval.png')
 
 plt.figure(5)
 plt.title('Heuristic easiness  probabilities distribution.')
-plt.savefig('imgs/data_bars/barEasinessProb_traintestval.png')
+plt.savefig(base_path + 'imgs/data_bars/barEasinessProb_traintestval.png')
 
 plt.figure(6)
 plt.title('Heuristic easiness score distribution.')
-plt.savefig('imgs/data_bars/barEasinessScore_traintestval.png')
+plt.savefig(base_path + 'imgs/data_bars/barEasinessScore_traintestval.png')
 
 
 

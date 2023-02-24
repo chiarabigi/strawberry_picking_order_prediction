@@ -44,7 +44,7 @@ class GAT_scores(torch.nn.Module):
     def __init__(self, hidden_layers, num_layers):
         super(GAT_scores, self).__init__()
 
-        self.nfeat = 5  # number of node features. Remember to change it if you add patches!
+        self.nfeat = 5  # number of node features. Remember to change it if you add patches! Patches is + 1280
         self.nhead = 5
         self.edge_dim = 1  # size of edge feature
 
