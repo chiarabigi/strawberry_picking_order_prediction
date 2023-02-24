@@ -4,6 +4,7 @@ import torch
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 from collections import Counter
 from utils.utils import get_single_out, true_unripe, get_info, get_dist_score, get_occ_score, update_occ, heuristic_sched, get_patches
 from utils.edges import min_str_dist
@@ -166,6 +167,7 @@ for phase in phases:
         heu_prob = [heu_prob[h] for h in order]
 
         # patches (not now, first let's obtain a good model without it)
+        # d = Image.open(img_path +  filename)
         patches = []  # get_patches(xy, d)
 
         gnnann.append({
