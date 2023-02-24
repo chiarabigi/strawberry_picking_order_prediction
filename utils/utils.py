@@ -63,7 +63,7 @@ def get_patches(xy, d):
         model.eval()
         compress = model.avgpool(model.features(o[a].unsqueeze(0))).squeeze(0).squeeze(-1).squeeze(-1)
         patches.append(compress.tolist())
-    return
+    return patches
 
 def get_info(str_ann, occ_ann):
     str_info = []

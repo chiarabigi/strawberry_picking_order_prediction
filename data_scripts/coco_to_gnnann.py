@@ -24,7 +24,7 @@ for phase in phases:
     # w = Counter([])  # initialization for first iteration, if you want to have balanced easiness score values
     gnnann = []  # where to store each graph information
 
-    # for the bars plots:
+    # for the bars loss_plots:
     easyS = []
     easyP = []
     heuS = []

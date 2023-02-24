@@ -208,7 +208,7 @@ def draw_curve(current_epoch, cfg, lastEpoch, best_loss):
     elif current_epoch == lastEpoch:
         ax.text(0.5, 0.5, 'T' + str(best_loss),
                  horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
-    fig.savefig(os.path.join('./plots/', 'train_{}_{}_{}_L2{}_{}.jpg'.format(cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
+    fig.savefig(os.path.join('imgs/loss_plots/', 'train_{}_{}_{}_L2{}_{}.jpg'.format(cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
 
 
 # Main
@@ -257,7 +257,7 @@ def train():
     model.load_state_dict(torch.load(model_path))
     test()
 
-    # to print loss and accuracy best values on the plots
+    # to print loss and accuracy best values on the loss_plots
     if len(lastEpochlist) > 0:
         lastEpoch = int(lastEpochlist[0])
     draw_curve(lastEpoch, cfg, lastEpoch, best_loss)
@@ -304,7 +304,7 @@ if __name__ == '__main__':
     scheduler = ReduceLROnPlateau(optimizer)
     criterion = cfg.LOSS
 
-    # Parameters for plots
+    # Parameters for loss_plots
     y_loss = {}
     y_loss['train'] = []
     y_loss['val'] = []
