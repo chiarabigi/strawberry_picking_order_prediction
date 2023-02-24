@@ -1,5 +1,10 @@
+'''
+Do you want to know what's the maximum distance between the strawberries?
+Remember to comment the division by the maximum distance in utils.edges.min_str_dist
+'''
 import json
-from utils import get_single_out, true_unripe, get_info, min_str_dist
+from utils.utils import get_single_out, true_unripe, get_info
+from utils.edges import min_str_dist
 
 base_path = '/home/chiara/strawberry_picking_order_prediction/'  # images are to be downloaded
 

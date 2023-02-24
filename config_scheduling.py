@@ -1,5 +1,5 @@
 LR = 1e-3
-HL = 4
+HL = 8
 BATCHSIZE = 32
 NL = 0
 WEIGHTDECAY = 0.01

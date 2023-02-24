@@ -1,7 +1,9 @@
 import numpy as np
 import json
+import os
 import matplotlib.pyplot as plt
 
+base_path = os.path.dirname(os.path.abspath(__file__))
 
 students_ann = []
 heuristic_ann = []
@@ -9,7 +11,7 @@ easiness_ann = []
 length = []
 phases = ['train', 'test', 'val']
 for phase in phases:
-    gnn_path = '/home/chiara/strawberry_picking_order_prediction/dataset/data_{}/raw/gnnann.json'.format(phase)
+    gnn_path = base_path.strip('imgs') + '/dataset/data_{}/raw/gnnann.json'.format(phase)
     with open(gnn_path) as f:
         anns = json.load(f)
     infoT = {k: [dic[k] for dic in anns] for k in anns[0]}
@@ -51,7 +53,7 @@ for i in range(len(sched_heuristic)):
                        ha="center", va="center", color="w", fontsize='small')
 
 # Displaying the plot
-plt.savefig('imgs/heatmaps/compareHeuristicEasiness.png')
+plt.savefig(base_path + '/heatmaps/compareHeuristicEasiness.png')
 
 # Generating data for the heat map STUDENTS
 data = sched_students
@@ -68,7 +70,7 @@ for i in range(len(sched_students)):
                        ha="center", va="center", color="w", fontsize='small')
 
 # Displaying the plot
-plt.savefig('imgs/heatmaps/compareStudentsEasiness.png')
+plt.savefig(base_path + '/heatmaps/compareStudentsEasiness.png')
 
 # Generating data for the heat map STUDENTS
 data = heuristic_students
@@ -85,4 +87,4 @@ for i in range(len(heuristic_students)):
                        ha="center", va="center", color="w", fontsize='small')
 
 # Displaying the plot
-plt.savefig('imgs/heatmaps/compareStudentsHeuristic.png')
+plt.savefig(base_path + '/heatmaps/compareStudentsHeuristic.png')

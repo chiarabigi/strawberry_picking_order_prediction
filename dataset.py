@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch_geometric.data import Dataset, Data
 import json
-from utils import only_sides, distances
+from utils.edges import only_sides, distances
 import copy
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')

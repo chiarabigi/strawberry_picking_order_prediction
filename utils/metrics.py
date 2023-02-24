@@ -1,59 +1,36 @@
 import numpy as np
 import torch
-from utils import get_single_out
+from utils.utils import get_single_out
+import matplotlib.pyplot as plt
+import os
 
+base_path = os.path.dirname(os.path.abspath(__file__))
 
-def get_occlusion1(output, occ, batch):
+def get_comparison(pred, batch, sched_easiness, sched_students, sched_heuristic, occ_1):
     sx = 0
-    batch_size = int(batch[-1]) + 1
-    occlusion = np.zeros(5)
-    for i in range(batch_size):
-        dx = get_single_out(batch, i, sx)
-        y_pred = output[sx:dx]
-        y_occ = occ[sx:dx]
-        index = y_pred.argmax(0)
-        occlusion[y_occ[index]] += 1
-        sx = dx
-    return occlusion
+    batch_size = int(batch.batch[-1]) + 1
 
-def get_realscheduling(output, label, batch):
-    sx = 0
-    batch_size = int(batch[-1]) + 1
-    scheduling = np.zeros(18)
-    for i in range(batch_size):
-        dx = get_single_out(batch, i, sx)
-        y_pred = output[sx:dx]
-        y_lab = label[sx:dx]
-        index = y_pred.argmax(0)
-        scheduling[y_lab[index] - 1] += 1
-        sx = dx
-    return scheduling
-
-def get_whole_scheduling(output, label, batch):
-    sx = 0
-    batch_size = int(batch[-1]) + 1
-    sched_pred = np.zeros(18)
-    sched_true = np.zeros(18)
-    for i in range(batch_size):
-        dx = get_single_out(batch, i, sx)
-        y_pred = output[sx:dx]
-        y_lab = label[sx:dx]
+    for j in range(batch_size):
+        dx = get_single_out(batch.batch, j, sx)
+        y_occ = batch.info[sx:dx]
+        y_ea = batch.easiness_ann[sx:dx]
+        y_heu = batch.heuristic_ann[sx:dx]
+        y_stud = batch.students_ann[sx:dx]
+        y_pred = pred[sx:dx]
         sched = sorted(range(len(y_pred)), reverse=True, key=lambda k: y_pred[k])
-        for j in range(len(sched)):
-            sched_pred[sched[j] - 1] += 1
-        for k in range(len(y_lab)):
-            sched_true[y_lab[k] - 1] += 1
-        sx = dx
-    return sched_pred, sched_true
 
-def get_label_scheduling(label, batch):
-    batch_size = int(batch[-1]) + 1
-    sched_true = np.zeros(18)
-    for i in range(batch_size):
-        y_lab = label[i]
-        for k in range(len(y_lab)):
-            sched_true[y_lab[k] - 1] += 1
-    return sched_true
+        unripe = len(y_stud) - len(list(set(y_stud))) + 1
+
+        for k in range(len(sched)):
+            sched_easiness[sched[k]][y_ea[k] - 1] += 1
+            occ_1[y_occ[k]][sched[k]] += 1
+            if y_stud[k] == len(y_stud) - unripe + 1 and sched[k] > (len(sched) - unripe):
+                sched[k] = y_stud[k] - 1
+            sched_students[sched[k]][y_stud[k] - 1] += 1
+            sched_heuristic[sched[k]][y_heu[k] - 1] += 1
+        sx = dx
+
+    return sched_easiness, sched_students, sched_heuristic, occ_1
 
 
 class BatchAccuracy_scheduling(torch.nn.Module):
@@ -77,3 +54,24 @@ class BatchAccuracy_scheduling(torch.nn.Module):
                         corrects += 1
             sx = dx
         return corrects
+
+def plot_heatmap(matrix, y_ticks, name):
+    # Generating data for the heat map STUDENTS
+    data = matrix
+    fig, ax = plt.subplots()
+    plt.imshow(data)
+    # Adding details to the plot
+    plt.title('Predicted scheduling VS ' + name)
+    plt.xlabel('Predicted scheduling')
+    plt.ylabel(name)
+    # Show all ticks and label them with the respective list entries
+    ax.set_yticks(np.arange(len(y_ticks)), labels=y_ticks)
+
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            text = ax.text(j, i, int(matrix[i, j]),
+                           ha="center", va="center", color="w", fontsize='x-small')
+
+    # Displaying the plot
+    plt.savefig(base_path.strip('utils') + '/imgs/heatmaps/heatmap{}.png'.format(name))
+    plt.close()

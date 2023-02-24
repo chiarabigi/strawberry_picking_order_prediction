@@ -3,12 +3,8 @@ from torch import Tensor
 
 
 class CustomLeakyReLU(torch.nn.Module):
-    r"""Applies the element-wise function:
-
-    .. math::
-        \text{LeakyReLU}(x) = \min(0, x) + \text{negative\_slope} * \max(0, x) + intercept
-
-    The domain is [0, 1]
+    r"""
+    Function with different slope before and after certain x values
     """
     __constants__ = ['positive_slope', 'negative_slope', 'intercept']
     minx: float
@@ -29,24 +25,30 @@ class CustomLeakyReLU(torch.nn.Module):
 
 def leaky_relu(input: Tensor, positive_slope: float = 0.1, negative_slope: float = 0.0, minx: float = -0.01, maxx: float = 0.4) -> Tensor:
 
-    result = negative_slope * torch.minimum(torch.zeros_like(input), input) + positive_slope * torch.maximum(torch.zeros_like(input), input)  # + intercept * torch.ones_like(input)
+    result = negative_slope * torch.minimum(torch.zeros_like(input), input) + positive_slope * torch.maximum(torch.zeros_like(input), input)
 
     return result
 
 
 class CustomMSE(torch.nn.Module):
+    '''
+    I wanted a MSE that didn't just favor small pred values. This is not the way to do it
+    '''
 
     def __init__(self) -> None:
         super(CustomMSE, self).__init__()
 
     def forward(self, pred: Tensor, true: Tensor) -> Tensor:
 
-        result = 1 / pred.size(dim=0) * torch.square(torch.matmul(true.t(), pred.__pow__(-1)) - torch.ones(pred.size(dim=0)))
+        result = 1 / pred.size(dim=0) * torch.matmul(torch.square(true).t(), torch.square((pred - true)))
 
         return result
 
 
 class mySigmoid(torch.nn.Module):
+    '''
+    Sigmoid, that cuts the y-axis in y + beta
+    '''
     def __init__(self, beta):
         super(mySigmoid, self).__init__()
         self.beta = beta

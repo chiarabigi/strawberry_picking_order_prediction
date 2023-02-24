@@ -5,7 +5,8 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
-from utils import get_single_out, true_unripe, get_info, min_str_dist, get_dist_score, get_occ_score, update_occ, heuristic_sched, get_sched, get_patches
+from utils.utils import get_single_out, true_unripe, get_info, get_dist_score, get_occ_score, update_occ, heuristic_sched, get_patches
+from utils.edges import min_str_dist
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 

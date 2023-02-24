@@ -2,17 +2,15 @@ import numpy as np
 import torch
 from torch_geometric.loader import DataLoader
 from tqdm import trange
-from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 import os
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import config_scheduling as cfg
-from utils import get_occlusion1, get_realscheduling, get_whole_scheduling, get_label_scheduling
+from utils.metrics import get_comparison, plot_heatmap
 from collections import Counter
 from model import GCN_scheduling
 from dataset import SchedulingDataset
-from customMSE import CustomMSE
 
 
 with torch.no_grad():
@@ -26,8 +24,10 @@ def train_one_epoch():
     step = 0
 
     if criterion._get_name() == 'BCELoss':
-        real_scheduling = np.zeros(18)
-        occ_1 = np.zeros(5)
+        sched_easiness = np.zeros((32, 32))
+        sched_students = np.zeros((32, 32))
+        sched_heuristic = np.zeros((32, 32))
+        occ_1 = np.zeros((3, 32))
     else:
         matches = []
         storeP = []
@@ -51,23 +51,25 @@ def train_one_epoch():
         running_loss += loss.item()
         tot_nodes += len(batch.batch)
         step += 1
-        '''
+        ''''''
         if criterion._get_name() == 'BCELoss':
-            real_scheduling += get_realscheduling(outputs, batch.easiness_ann, batch.batch)
-            occ_1 += get_occlusion1(outputs, batch.info, batch.batch)
+            sched_easiness, sched_students, sched_heuristic, occ_1 = get_comparison(outputs, batch, sched_easiness,
+                                                                            sched_students, sched_heuristic, occ_1)
         else:
             storeT += [x for x in batch.y.t().tolist()[0] if x != 0]
             storeP += [x for x in torch.exp(outputs).t().tolist()[0] if x != 0]
             outputsL = [round(x, 2) for x in outputs.t().tolist()[0]]
             batchyL = [round(x, 2) for x in batch.y.t().tolist()[0]]
-            matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]'''
+            matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
 
     # for loss plot
     y_loss['train'].append(running_loss / step)
 
     if criterion._get_name() == 'BCELoss':
-        print('True scheduling of predicted as first (TRAIN): ', real_scheduling)
-        print('Occlusion property for node with higher probability (TRAIN): ', occ_1)
+        plot_heatmap(sched_easiness, list(range(0, 31)), 'TRAIN heuristic easiness score scheduling')
+        plot_heatmap(sched_heuristic, list(range(0, 31)), 'TRAIN heuristic min max scheduling')
+        plot_heatmap(sched_students, list(range(0, 31)), 'TRAIN students scheduling')
+        plot_heatmap(occ_1, ['NON', ' BY LEAF', 'BY BERRY'], 'TRAIN occlusion property')
     else:
         print('\n Matches TRAIN', sorted(Counter(matches).most_common()))
         print(f'\n% guessed TRAIN: {100 * sum(Counter(matches).values()) / tot_nodes:.4f}, \twith: {len(Counter(matches).most_common()):.4f} different scores')
@@ -92,8 +94,10 @@ def validation():
     step = 0
 
     if criterion._get_name() == 'BCELoss':
-        real_vscheduling = np.zeros(18)
-        occ_1 = np.zeros(5)
+        sched_easiness = np.zeros((32, 32))
+        sched_students = np.zeros((32, 32))
+        sched_heuristic = np.zeros((32, 32))
+        occ_1 = np.zeros((3, 32))
     else:
         matches = []
         storeT = []
@@ -106,23 +110,26 @@ def validation():
         running_vloss += vloss.item()
         tot_vnodes += len(vbatch.batch)
         step += 1
-        '''
+
         if criterion._get_name() == 'BCELoss':
-            real_vscheduling += get_realscheduling(voutputs, vbatch.easiness_ann, vbatch.batch)
-            occ_1 += get_occlusion1(voutputs, vbatch.info, vbatch.batch)
+            sched_easiness, sched_students, sched_heuristic, occ_1 = get_comparison(voutputs, vbatch, sched_easiness,
+                                                                                    sched_students, sched_heuristic,
+                                                                                    occ_1)
         else:
             storeT += [x for x in vbatch.y.t().tolist()[0] if x != 0]
             storeP += [x for x in torch.exp(voutputs).t().tolist()[0] if x != 0]
             outputsL = [round(x, 2) for x in voutputs.t().tolist()[0]]
             batchyL = [round(x, 2) for x in vbatch.y.t().tolist()[0]]
-            matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]'''
+            matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
 
     avg_vloss = running_vloss / step
     y_loss['val'].append(avg_vloss)
 
     if criterion._get_name() == 'BCELoss':
-        print('True scheduling of predicted as first (VAL): ', real_vscheduling)
-        print('Occlusion property for node with higher probability (VAL): ', occ_1)
+        plot_heatmap(sched_easiness, list(range(0, 31)), 'VAL heuristic easiness score scheduling')
+        plot_heatmap(sched_heuristic, list(range(0, 31)), 'VAL heuristic min max scheduling')
+        plot_heatmap(sched_students, list(range(0, 31)), 'VAL students scheduling')
+        plot_heatmap(occ_1, ['NON', ' BY LEAF', 'BY BERRY'], 'VAL occlusion property')
     else:
         print('Matches VAL', sorted(Counter(matches).most_common()))
         print(
@@ -147,12 +154,10 @@ def test():
     tot_tnodes = 0.0
 
     if criterion._get_name() == 'BCELoss':
-        real_tscheduling = np.zeros(18)
-        occ_1 = np.zeros(5)
-        sched_pred = np.zeros(18)
-        sched_true = np.zeros(18)
-        sched_students = np.zeros(18)
-        sched_heuristic = np.zeros(18)
+        sched_easiness = np.zeros((32, 32))
+        sched_students = np.zeros((32, 32))
+        sched_heuristic = np.zeros((32, 32))
+        occ_1 = np.zeros((3, 32))
     else:
         storeT = []
         storeP = []
@@ -161,25 +166,23 @@ def test():
     for i, tbatch in enumerate(test_loader):
         pred = model(tbatch)
         tot_tnodes += len(tbatch.batch)
-        '''
+
         if criterion._get_name() == 'BCELoss':
-            real_tscheduling += get_realscheduling(pred, tbatch.easiness_ann, tbatch.batch)
-            occ_1 += get_occlusion1(pred, tbatch.info, tbatch.batch)
-            s_pred, s_true = get_whole_scheduling(pred, tbatch.easiness_ann, tbatch.batch)
-            sched_students += get_label_scheduling(tbatch.students_ann, tbatch.batch)
-            sched_heuristic += get_label_scheduling(tbatch.heuristic_ann, tbatch.batch)
-            sched_pred += s_pred
-            sched_true += s_true
+            sched_easiness, sched_students, sched_heuristic, occ_1 = get_comparison(pred, tbatch, sched_easiness,
+                                                                                    sched_students, sched_heuristic,
+                                                                                    occ_1)
         else:
             outputsL = [round(x, 2) for x in pred.t().tolist()[0]]
             batchyL = [round(x, 2) for x in tbatch.y.t().tolist()[0]]
             storeT += [x for x in tbatch.y.t().tolist()[0] if x != 0]
             storeP += [x for x in torch.exp(pred).t().tolist()[0] if x != 0]
-            matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]'''
+            matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
 
     if criterion._get_name() == 'BCELoss':
-        print('True scheduling of predicted as first (TEST): ', real_tscheduling)
-        print('Occlusion property for node with higher probability (TEST): ', occ_1)
+        plot_heatmap(sched_easiness, list(range(0, 31)), 'TEST heuristic easiness score scheduling')
+        plot_heatmap(sched_heuristic, list(range(0, 31)), 'TEST heuristic min max scheduling')
+        plot_heatmap(sched_students, list(range(0, 31)), 'TEST students scheduling')
+        plot_heatmap(occ_1, ['NON', ' BY LEAF', 'BY BERRY'], 'TEST occlusion property')
     else:
         print('Matches TEST', sorted(Counter(matches).most_common()))
         print(
@@ -207,7 +210,7 @@ def draw_curve(current_epoch, cfg, lastEpoch, best_loss):
     elif current_epoch == lastEpoch:
         ax.text(0.5, 0.5, 'T' + str(best_loss),
                  horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
-    fig.savefig(os.path.join('./plots/'.format(goal), 'train_{}_{}_{}_L2{}_{}.jpg'.format(cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
+    fig.savefig(os.path.join('./plots/', 'train_{}_{}_{}_L2{}_{}.jpg'.format(cfg.HL, cfg.NL, cfg.BATCHSIZE, cfg.WEIGHTDECAY, cfg.SEEDNUM)))
 
 
 # Main
@@ -236,7 +239,7 @@ def train():
             # Track the best performance, and save the model's state
             if val_loss < best_vloss:
                 best_vloss = val_loss
-                model_path = '/home/chiara/strawberry_picking_order_prediction/best_models/model_{}.pth'.format(timestamp)
+                model_path = base_path + '/best_models/model_{}.pth'.format(timestamp)
                 torch.save(model.state_dict(), model_path)
                 early_stopping_counter = 0
             else:
@@ -265,8 +268,7 @@ def train():
 if __name__ == '__main__':
     device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     print('main', device)
-
-    goal = 'easiness'
+    base_path = os.path.dirname(os.path.abspath(__file__))
 
     # Tuned Parameters
     learningRate = cfg.LR
@@ -285,11 +287,11 @@ if __name__ == '__main__':
 
     # Load Dataset
     print("Loading data_scripts...")
-    train_path = 'dataset/data_train/'.format(goal)
+    train_path = 'dataset/data_train/'
     train_dataset = SchedulingDataset(train_path)
-    val_path = 'dataset/data_val/'.format(goal)
+    val_path = 'dataset/data_val/'
     val_dataset = SchedulingDataset(val_path)
-    test_path = 'dataset/data_test/'.format(goal)
+    test_path = 'dataset/data_test/'
     test_dataset = SchedulingDataset(test_path)
 
     train_loader = DataLoader(train_dataset, batch_size=batchSize, shuffle=True)  #, num_workers=2, pin_memory_device='cuda:1', pin_memory=True)
