@@ -14,14 +14,14 @@ def get_comparison(pred, batch, sched_easiness, sched_students, sched_heuristic,
 
     for j in range(batch_size):
         dx = get_single_out(batch.batch, j, sx)
-        y_occ = batch.info[sx:dx]
-        y_ea = batch.easiness_ann[sx:dx]
-        y_heu = batch.heuristic_ann[sx:dx]
-        y_stud = batch.students_ann[sx:dx]
-        y_pred = pred[sx:dx]
+        y_occ = batch.info[sx:dx].cpu().detach().numpy().transpose()[0]
+        y_ea = batch.easiness_ann[sx:dx].cpu().detach().numpy().transpose()[0]
+        y_heu = batch.heuristic_ann[sx:dx].cpu().detach().numpy().transpose()[0]
+        y_stud = batch.students_ann[sx:dx].cpu().detach().numpy().transpose()[0]
+        y_pred = pred[sx:dx].cpu().detach().numpy().transpose()[0]
         sched = sorted(range(len(y_pred)), reverse=True, key=lambda k: y_pred[k])
 
-        unripe = len(y_stud) - len(list(set(y_stud))) + 1
+        unripe = np.unique(y_stud).size + 1
 
         for k in range(len(sched)):
             sched_easiness[y_ea[k] - 1][sched[k]] += 1

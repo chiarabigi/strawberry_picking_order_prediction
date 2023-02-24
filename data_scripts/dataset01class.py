@@ -51,8 +51,6 @@ class Scheduling01ClassDataset(Dataset):
             heuristic_scheduling = anns[index]['heuristic_sc_ann']
             easiness_scheduling = anns[index]['easiness_sc_ann']
 
-            stud_prob = anns[index]['stud_prob']
-
             # Get node features
             node_feats = self._get_node_features(box_obj, occ_score, ripeness, occ_leaf, patches)
             # Get edge features and adjacency info
@@ -65,7 +63,7 @@ class Scheduling01ClassDataset(Dataset):
                         edge_index=edge_index,
                         edge_attr=edge_feats,
                         y=y,
-                        students_ann=torch.tensor(stud_prob, dtype=torch.float32, device=device).unsqueeze(1),
+                        students_ann=torch.tensor(students_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
                         heuristic_ann=torch.tensor(heuristic_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
                         easiness_ann=torch.tensor(easiness_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
                         info=torch.tensor(occ, device=device).unsqueeze(1)
