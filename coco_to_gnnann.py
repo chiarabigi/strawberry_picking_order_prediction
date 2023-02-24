@@ -19,7 +19,6 @@ with open(unripe_path) as f:
     unripe_annT = json.load(f)  # list of dictionaries
 unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}  # dictionary of lists
 
-
 phases = ['train', 'val', 'test']
 for phase in phases:
     # w = Counter([])  # initialization for first iteration, if you want to have balanced easiness score values
@@ -50,7 +49,7 @@ for phase in phases:
         dx = get_single_out(anns['image_id'], i, sx)
         ripe = anns['bbox'][sx:dx]
         occ = anns['category_id'][sx:dx]
-        students_scheduling = anns['scheduling'][sx:dx]
+        students_scheduling = anns['caption'][sx:dx]
         tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes']))
                       if unripe_ann['file_name'][x] == filename][0]
         sx = dx
@@ -82,7 +81,7 @@ for phase in phases:
         dist_score = get_dist_score(min_dist)
         occ_sc = get_occ_score(ripe_info)
         ripeness = [1] * len(ripe) + [0] * len(unripe)
-        easiness = [dist_score[e] * occ_sc[e] for e in range(len(dist_score))]
+        easiness = [dist_score[e] * occ_sc[e] + 0.11467494382197191 for e in range(len(dist_score))]
 
         '''
         # balance scores: are there some scores you want to discard?

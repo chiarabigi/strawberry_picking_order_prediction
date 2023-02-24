@@ -3,8 +3,10 @@ import torch
 from utils.utils import get_single_out
 import matplotlib.pyplot as plt
 import os
+import copy
 
 base_path = os.path.dirname(os.path.abspath(__file__))
+
 
 def get_comparison(pred, batch, sched_easiness, sched_students, sched_heuristic, occ_1):
     sx = 0
@@ -22,12 +24,12 @@ def get_comparison(pred, batch, sched_easiness, sched_students, sched_heuristic,
         unripe = len(y_stud) - len(list(set(y_stud))) + 1
 
         for k in range(len(sched)):
-            sched_easiness[sched[k]][y_ea[k] - 1] += 1
+            sched_easiness[y_ea[k] - 1][sched[k]] += 1
+            sched_heuristic[y_heu[k] - 1][sched[k]] += 1
             occ_1[y_occ[k]][sched[k]] += 1
             if y_stud[k] == len(y_stud) - unripe + 1 and sched[k] > (len(sched) - unripe):
                 sched[k] = y_stud[k] - 1
-            sched_students[sched[k]][y_stud[k] - 1] += 1
-            sched_heuristic[sched[k]][y_heu[k] - 1] += 1
+            sched_students[y_stud[k] - 1][sched[k]] += 1
         sx = dx
 
     return sched_easiness, sched_students, sched_heuristic, occ_1
@@ -55,22 +57,32 @@ class BatchAccuracy_scheduling(torch.nn.Module):
             sx = dx
         return corrects
 
+
 def plot_heatmap(matrix, y_ticks, name):
     # Generating data for the heat map STUDENTS
     data = matrix
     fig, ax = plt.subplots()
     plt.imshow(data)
     # Adding details to the plot
-    plt.title('Predicted scheduling VS ' + name)
+    plt.suptitle('% of predicted scheduling is actually: ' + name)
     plt.xlabel('Predicted scheduling')
     plt.ylabel(name)
     # Show all ticks and label them with the respective list entries
     ax.set_yticks(np.arange(len(y_ticks)), labels=y_ticks)
 
+    percentage_matrix = copy.copy(matrix)
     for i in range(len(matrix)):
         for j in range(len(matrix[i])):
-            text = ax.text(j, i, int(matrix[i, j]),
-                           ha="center", va="center", color="w", fontsize='x-small')
+            if sum(matrix[:, j]) == 0:
+                percentage_matrix[i, j] = 0
+            else:
+                percentage_matrix[i, j] = int(100 * matrix[i, j] / sum(matrix[:, j]))
+            text = ax.text(j, i, percentage_matrix[i, j],
+                           ha="center", va="center", color="w", fontsize='xx-small')
+
+    if len(matrix[0]) == len(matrix[:, 0]):
+        diag = sum(percentage_matrix[i, i] for i in range(len(matrix))) / len(matrix)
+        plt.title('% of correspondence: {}'.format(diag))
 
     # Displaying the plot
     plt.savefig(base_path.strip('utils') + '/imgs/heatmaps/heatmap{}.png'.format(name))

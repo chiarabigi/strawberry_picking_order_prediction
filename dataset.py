@@ -70,7 +70,7 @@ class SchedulingDataset(Dataset):
             data = Data(x=node_feats,
                         edge_index=edge_index,
                         edge_attr=edge_feats,
-                        y=y,
+                        y=torch.tensor(easiness_score, dtype=torch.float32, device=device).unsqueeze(1),
                         students_ann=torch.tensor(students_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
                         heuristic_ann=torch.tensor(heuristic_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
                         easiness_ann=torch.tensor(easiness_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
