@@ -84,6 +84,9 @@ def plot_heatmap(matrix, y_ticks, name):
         diag = sum(percentage_matrix[i, i] for i in range(len(matrix))) / len(matrix)
         plt.suptitle('% of predicted scheduling is actually: ' + name)
         plt.title('% of correspondence: {}'.format(diag))
+        ith_correspondence = [100 * abs(sum(matrix[i]) - abs(sum(matrix[i]) - sum(matrix[:, i]))) / sum(matrix[i]) for i in range(len(matrix))]
+        print(name)
+        print(ith_correspondence)
     else:
         plt.title('% of occlusion property for each scheduling prediction')
 

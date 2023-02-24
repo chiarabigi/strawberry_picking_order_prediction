@@ -21,7 +21,7 @@ test_dataset = cfg.DATASET(test_path)
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
 
 model = cfg.MODEL(cfg.HL, cfg.NL).to(device)
-model_path = base_path + '/best_models/model_20230224_101010.pth'
+model_path = base_path + '/best_models/model_20230224_141507.pth'
 model.load_state_dict(torch.load(model_path))
 model.eval()
 
