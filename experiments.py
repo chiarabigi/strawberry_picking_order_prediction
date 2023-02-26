@@ -22,10 +22,11 @@ device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 base_path = os.path.dirname(os.path.abspath(__file__))
 
 
-def experiment(img_path):
+
+def experiment(image_path):
 
     # obtain file with bounding boxes and occlusion properties from raw image
-    json_annotations_path = test_detr(img_path)
+    json_annotations_path = test_detr(image_path)
 
     # obatin data in graph representation
     graph_data_scheduling = cfg.DATASET(json_annotations_path)
@@ -39,13 +40,13 @@ def experiment(img_path):
     bbox = first_bbox(first, json_annotations_path)
 
     # obtain original image with white patch on target strawberry
-    new_image_path = add_patch(img_path, bbox)
+    new_image_path = add_patch(image_path, bbox)
 
     return new_image_path
 
 
-img_path = '/home/chiara/TRAJECTORIES/dataset_collection/dataset/strawberry_imgs/rgb_img_config0_strawberry0_traj0.png'
-target_strawberry = experiment(img_path)
+image_path = '/home/chiara/TRAJECTORIES/dataset_collection/dataset/strawberry_imgs/rgb_img_config0_strawberry0_traj0.png'
+target_strawberry = experiment(image_path)
 
 
 def first_bbox(first, json_path):

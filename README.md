@@ -1,29 +1,114 @@
-# strawberry_picking_order_prediction
-using GNN 
+# Strawberry Picking Scheduling
 
-## Link for the power point with explenation of the problem and questions
+<!-- TABLE OF CONTENTS -->
+## Table of Contents
 
-https://universityoflincoln-my.sharepoint.com/:p:/g/personal/aghalamzanesfahani_lincoln_ac_uk/EWzrxea-p3ZOm_Q9itl0qBYBnl4xdTWQk9VtweNZXVgs7A?e=vfDBDw
+* [About the Project](#about-the-project)
+  * [Built With](#built-with)
+* [Getting Started](#getting-started)
+  * [Prerequisites](#prerequisites)
+  * [Installation](#installation)
+* [Usage](#usage)
+* [Roadmap](#roadmap)
+* [References](#references)
+* [Contact](#contact)
+* [Acknowledgements](#acknowledgements)
 
-## Link for the images used in coco_to_gnnann and easiness
+## About The Project
 
-https://universityoflincoln-my.sharepoint.com/:f:/g/personal/26701596_students_lincoln_ac_uk/EidUs1e5xIRMmPLYI9tmVpcBF9xqP4B03KFErKaVEK7DyA?e=q8F3Ky
+This repo contains the code to predict scheduling of strawberry picking starting from images of clusters of strawberries with bounding box and occlusion annotations.
 
-## Training with easiness label
+### Built With
 
-True scheduling of predicted as first (TEST):  [88. 28. 11. 16.  2.  0.  3.  0.  0.  1.  0.  0.  0.  0.  0.  0.  0.]
-Occlusion property for node with higher probability (TEST):  [ 26.   9.   1. 109.   4.]
+- **Operating system Ubuntu 10.04**
+- **Language Pytorch 3.9**
+- **Main library Torch 1.12** 
 
-## General idea
+## Getting Started
 
-Make every strawberry learn it's representation in the contest of the cluster.
+To predict a scheduling order, each strawberry learns its representation in the contest of the cluster. To do so, we use a Graph Neural Neural Network (GNN). We represent the annotation of the images as graphs, where the nodes are the strawberries, represented by the bounding box coordinates and an occlusion and ripeness score.
 
-Clusters are represented as graphs: each node has, as features, bbox coordinates and occlusion propery as a weight. All nodes are connected to each other, the edge feature is the pixel euclidean distance.
+Three main trials were followed:
 
-The models use GATConv layers, which are like convolutional layers but for graphs. They are used so every nodes recieves informations from its neighbours, and aggregates them with their own. The attention in this layer is used because not all edges have the same importance.
+1) classify each strawberry as "first to be picked" or not. The output of the model is a probability for each strawberry. The last layer of the model is a Sigmoid activation function and the loss is Binary Cross Entropy loss. Since the dataset is imbalanced (there are more strawberries that are not first to be picked), the loss can be weighted
 
-The scheduling model is a node classification model. It classifies nodes as "first strawberry to be picked" or not.
+2) predict an "easiness of picking" score, for each strawberry. The last layer of the model is a custom LeakyReLU, with variable negative and positive slopes. The loss function is Mean Squared Error.
 
-The picking success model has, in the dataset, another node feature: isTarget. It is a graph classification problem, the output is a probabilty of the target strawberry being succesfully picked.
+4) Predict a probability distribution for each cluster (vector of probabilities of being picked first for each strawberry, that sums to one). The last to one layer is a Log-Softmax. The loss is KL Divergence.
 
-The usage of the two models together is explained in the "experiments.py" file
+For all the approaches, we can retrive a scheduling order by sorting the outputs.
+
+
+### Prerequisites
+
+All the Pytorch libraries needed are in the 'requirements.txt' file
+
+### Installation
+
+Just clone this repo, and download the dataset if you want to train or test with our data. The dataset can be retrieved from the repo: https://github.com/imanlab/pickingScheduling_successPredict
+
+## Usage
+
+### EXPERIMENT: from raw image to image with white patch on target
+
+Go to experiments.py and put the path to your image in the variable 'image_path'. Then:
+
+python experiments.py
+
+### Test our models
+
+Choose a model from the 'best_models' folder, load it in the 'test.py' script. More instructions are in the comments to the code.
+
+To run from terminal, cd to the workspace folder and type: 
+
+python test.py
+
+### Train a model
+
+Choose an approach, from the 'config.py' script. Remeber to delete the 'process' folders in the data_train/test/val folders when you are switching approach.
+
+To run from terminal, cd to the workspace folder and type: 
+
+python train.py
+
+## Roadmap
+
+We have a good prediction of the first strawberry to be picked, but not of the whole scheduling.
+
+Future steps could be:
+
+- trying to customize a loss function for the "scores" approach: in fact, the model tends just to output small numbers so that the loss can be small
+- use the map attention output of the DETR as node feature
+
+## References
+
+Usefull papers I came across while studying GNNs:
+
+[1] Y. Huang, A. Conkey, and T. Hermans, “Planning for multi-object manipulation with graph neural network relational classifiers,” arXiv preprint arXiv:2209.11943, 2022.
+
+[2] P. Veliˇckovi ́c, G. Cucurull, A. Casanova, A. Romero, P. Lio, and Y. Bengio, “Graph attention networks,” arXiv preprint arXiv:1710.10903, 2017.
+
+[3] K. Han, Y. Wang, J. Guo, Y. Tang, and E. Wu, “Vision gnn: An image is worth graph of nodes,” arXiv preprint arXiv:2206.00272, 2022.
+
+[4] D. Xu, Y. Zhu, C. B. Choy, and L. Fei-Fei, “Scene graph generation by iterative message passing,” in Proceedings of the IEEE conference on computer vision and pattern recognition, 2017, pp. 5410–5419.
+
+[5] H. Xu, C. Jiang, X. Liang, and Z. Li, “Spatial-aware graph relation network for large-scale object detection,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2019, pp. 92989307.
+
+[6] S. Thakur, B. Pandey, J. Peethambaran, and D. Chen, “A graph attention network for object detection from raw lidar data,” in IGARSS 2022-2022 IEEE International Geoscience and Remote Sensing Symposium. IEEE, 2022, pp. 3091–3094.
+
+[7] F. Ma, F. Gao, J. Sun, H. Zhou, and A. Hussain, “Attention graph convolution network for image segmentation in big sar imagery data,”Remote Sensing, vol. 11, no. 21, p. 2586, 2019.
+
+[8] A. S. Nassar, S. D’aronco, S. Lef`evre, and J. D. Wegner, “Geograph: Graph-based multi-view object detection with geometric cues end-to-end,” in Computer Vision–ECCV 2020: 16th European Conference, Glasgow, UK, August 23–28, 2020, Proceedings, Part VII 16. Springer, 2020, pp. 488–504.
+
+[9] Z. Zhao, G. Verma, C. Rao, A. Swami, and S. Segarra, “Distributed scheduling using graph neural networks,” in ICASSP 2021-2021 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 2021, pp. 4720–4724.
+
+[10] R. Sambamoorthy, J. Mandalapu, S. S. Peruru, B. Jain, and E. Altman, “Graph neural network based scheduling: Improved throughput under a generalized interference model,” in Performance Evaluation Methodologies and Tools: 14th EAI International Conference, VALUETOOLS 2021, Virtual Event, October 30–31, 2021, Proceedings. Springer,2021, pp. 144–153.
+
+## Contact 
+
+For any issue please contact me at bigichiara1@gmail.com :)
+
+
+## Acknowledgements
+
+A. Tafuro, A. Adewumi, S. Parsa, G. E. Amir, and B. Debnath, “Strawberry picking point localization ripeness and weight estimation,” in 2022 International Conference on Robotics and Automation (ICRA). IEEE, 2022, pp. 2295–2302.

@@ -119,8 +119,7 @@ def get_args_parser():
     # dataset parameters
     parser.add_argument('--num_classes', type=int, default=5)
     parser.add_argument('--dataset_file', default='coco')
-    parser.add_argument('--coco_path', type=str, default='/home/chiara/TRAJECTORIES/dataset_collection/dataset/strawberry_imgs/rgb_img_config0_strawberry0_traj0.png',
-                        help='path to raw images to process')
+    parser.add_argument('--coco_path', type=str, help='path to raw images to process')
     parser.add_argument('--data_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
 
