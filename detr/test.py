@@ -14,15 +14,17 @@ import numpy as np
 
 import torch
 
-import util.misc as utils
+import detr.util.misc as utils
 
-from models import build_model
-from datasets.face import make_face_transforms
+from detr.models import build_model
+from detr.datasets.face import make_face_transforms
 
 import matplotlib.pyplot as plt
 import time
 
 import json
+
+from data_scripts.detr_to_gnnann import ann_to_gnnann
 
 
 def box_cxcywh_to_xyxy(x):
@@ -47,6 +49,8 @@ def get_images(in_path):
             ext = str.lower(ext)
             if ext == '.jpg' or ext == '.jpeg' or ext == '.gif' or ext == '.png' or ext == '.pgm':
                 img_files.append(os.path.join(dirpath, file))
+    if len(img_files) == 0:
+        img_files = [in_path]
 
     return img_files
 
@@ -115,16 +119,16 @@ def get_args_parser():
     # dataset parameters
     parser.add_argument('--num_classes', type=int, default=5)
     parser.add_argument('--dataset_file', default='coco')
-    parser.add_argument('--coco_path', type=str, default='/home/chiara/SEGMENTATION/DATASETS/DATASET_ASSIGNMENT1/coco/test',
+    parser.add_argument('--coco_path', type=str, default='/home/chiara/TRAJECTORIES/dataset_collection/dataset/strawberry_imgs/rgb_img_config0_strawberry0_traj0.png',
                         help='path to raw images to process')
     parser.add_argument('--data_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
 
     parser.add_argument('--output_dir', default='/home/chiara/SCHEDULING/detr_experiments/detr_test_results/imgs',
                         help='path where to save the results, empty for no saving')
-    parser.add_argument('--device', default='cuda',
+    parser.add_argument('--device', default='cpu',
                         help='device to use for training / testing')
-    parser.add_argument('--resume', default='/home/chiara/SCHEDULING/GNN/detr/checkpoints/checkpoint.pth',
+    parser.add_argument('--resume', default='/home/chiara/strawberry_picking_order_prediction/detr/checkpoints/checkpoint.pth',
                         help='resume from checkpoint')
 
     parser.add_argument('--thresh', default=0.5, type=float)
@@ -205,6 +209,10 @@ def infer(images_path, model, postprocessors, device, args):
         plt.figure(figsize=(16, 10))
         plt.imshow(img)
         ax = plt.gca()
+        annot_elem = {
+            'bbox': [],
+            'occlusion': []
+        }
         boxes = []
         occ_prop = []
         for idx, box in enumerate(bboxes_scaled):
@@ -225,23 +233,21 @@ def infer(images_path, model, postprocessors, device, args):
             ax.add_patch(plt.Rectangle((bbox[0,0], bbox[0,1]), bbox[1,0] - bbox[0,0], bbox[3,1] - bbox[1,1],
                                        fill=False, color=[0.850, 0.325, 0.098], linewidth=3))
 
-            cl = probas[idx].argmax()
-            annot_elem = {
-                'bbox': [xmin, ymin, width, height],
-                'occlusion property': occlusion_properties[cl]
-            }
-            single_graph['annotations'].append(annot_elem)
+            cl = probas[idx].argmax().astype(np.int32)
+
+            annot_elem['bbox'].append([xmin, ymin, width, height])
+            annot_elem['occlusion'].append(cl.tolist())
             boxes.append([xmin, ymin, width, height])
-            occ_prop.append(cl)
+            occ_prop.append(cl.tolist())
 
             # or here directly I will call the model to add scheduling info to the image
             #text = f'{occlusion_properties[cl]:0.2f}'
             text = occlusion_properties[cl]
             ax.text(bbox[0,0], bbox[0,1], text, fontsize=15,
                     bbox=dict(facecolor='yellow', alpha=0.5))
+        single_graph['annotations'] = annot_elem
         plt.axis('off')
         #plt.show()
-        for_gnn.append([boxes, occ_prop])
         img_save_path = os.path.join(output_path, filename)
         plt.savefig(img_save_path)
         #cv2.imwrite(img_save_path, img)
@@ -249,13 +255,19 @@ def infer(images_path, model, postprocessors, device, args):
         #cv2.waitKey()
         infer_time = end_t - start_t
         duration += infer_time
+        for_gnn.append(single_graph)
 
         print("Processing...{} ({:.3f}s)".format(filename, infer_time))
 
-    save_path = '/home/chiara/SCHEDULING/detr_experiments/detr_test_results/anns/gnnann.json'
+    gnnann = ann_to_gnnann(for_gnn)
+    save_path = images_path[0].strip(images_path[0].split('/')[-1])
+    save_path_folder = save_path + 'raw'
+    if not os.path.exists(save_path_folder):
+        os.makedirs(save_path_folder)
 
-    with open(save_path, "w") as f:
-        json_str = json.dumps(for_gnn)
+    save_path_json = save_path_folder + '/gnnann.json'
+    with open(save_path_json, "w") as f:
+        json_str = json.dumps(gnnann)
         f.write(json_str)
 
     avg_duration = duration / len(images_path)
@@ -264,7 +276,7 @@ def infer(images_path, model, postprocessors, device, args):
     return save_path
 
 
-def test_detr():
+def test_detr(coco_path):
     parser = argparse.ArgumentParser('DETR training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
     if args.output_dir:
@@ -277,10 +289,11 @@ def test_detr():
         checkpoint = torch.load(args.resume, map_location='cpu')
         model.load_state_dict(checkpoint['model'])
     model.to(device)
-    image_paths = get_images(args.coco_path)
+    image_paths = get_images(coco_path)
 
     save_path = infer(image_paths, model, postprocessors, device, args)
 
     return save_path
 
-test_detr()
+
+# test_detr(coco_path='/home/chiara/TRAJECTORIES/dataset_collection/dataset/strawberry_imgs/rgb_img_config0_strawberry0_traj0.png')
