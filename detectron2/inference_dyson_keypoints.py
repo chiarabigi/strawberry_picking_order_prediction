@@ -87,65 +87,71 @@ unann = []
 img_dir = ''  # path to images
 
 
-dataset_dicts = []
-# file_name_list = []
+def test_detectron2(img_dir, save):
 
-for idx, rgb_file in tqdm(enumerate(pathlib.Path(img_dir).rglob('*.png'))):
+    dataset_dicts = []
+    # file_name_list = []
 
-    # print('org_file: ', rgb_file.as_posix())
-    im = cv2.imread(rgb_file.as_posix())
-    json_name = re.sub('.png', '.json', rgb_file.name)
-    # im = cv2.imread(file_name)
-    # print(im.shape)
+    for idx, rgb_file in tqdm(enumerate(pathlib.Path(img_dir).rglob('*.png'))):
 
-    # cv2.imshow('inference', im)
-    # key = cv2.waitKey(0)
-    # if key == ord('q'):
-    #     cv2.destroyAllWindows()
-    #     break
+        # print('org_file: ', rgb_file.as_posix())
+        im = cv2.imread(rgb_file.as_posix())
+        json_name = re.sub('.png', '.json', rgb_file.name)
+        # im = cv2.imread(file_name)
+        # print(im.shape)
 
-    # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
-    outputs = predictor(im)
-    # print('outputs: ', outputs['instances'].to('cpu'))
+        # cv2.imshow('inference', im)
+        # key = cv2.waitKey(0)
+        # if key == ord('q'):
+        #     cv2.destroyAllWindows()
+        #     break
 
-    ''''''
-    # save unripe boxes info
-    outputs = outputs['instances'].to('cpu')
-    outputsF = outputs.get_fields()
-    all_boxes = outputsF['pred_boxes'].tensor.tolist()
-    classes = outputsF['pred_classes'].tolist()
-    boxes = []
-    for i in range(len(all_boxes)):
-        if classes[i] != 0:
-            boxes.append(all_boxes[i])
-    unripe_ann = {
-        'file_name': rgb_file.name,
-        'bboxes': boxes
-    }
-    unann.append(unripe_ann)
+        # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
+        outputs = predictor(im)
+        # print('outputs: ', outputs['instances'].to('cpu'))
 
-    '''
-    # to visualise
-    print('image file', rgb_file.as_posix())
-    # print('outputs: ', outputs)
-    v = Visualizer(im[:, :, ::-1],
-                   metadata=strawberry_metadata,
-                   scale=1,
-                   # remove the colors of unsegmented pixels. This option is only available for segmentation models
-                   instance_mode=ColorMode.IMAGE_BW
-                   )
+        ''''''
+        # save unripe boxes info
+        outputs = outputs['instances'].to('cpu')
+        outputsF = outputs.get_fields()
+        all_boxes = outputsF['pred_boxes'].tensor.tolist()
+        classes = outputsF['pred_classes'].tolist()
+        boxes = []
+        for i in range(len(all_boxes)):
+            if classes[i] != 0:
+                boxes.append(all_boxes[i])
+        unripe_ann = {
+            'file_name': rgb_file.name,
+            'bboxes': boxes
+        }
+        unann.append(unripe_ann)
 
-    out = v.draw_instance_predictions(outputs)
-    cv2.imshow('inference', out.get_image()[:, :, ::-1])
-    key = cv2.waitKey(0)
-    if key == ord('q'):
-        cv2.destroyAllWindows()
-        break'''
+        '''
+        # to visualise
+        print('image file', rgb_file.as_posix())
+        # print('outputs: ', outputs)
+        v = Visualizer(im[:, :, ::-1],
+                       metadata=strawberry_metadata,
+                       scale=1,
+                       # remove the colors of unsegmented pixels. This option is only available for segmentation models
+                       instance_mode=ColorMode.IMAGE_BW
+                       )
+    
+        out = v.draw_instance_predictions(outputs)
+        cv2.imshow('inference', out.get_image()[:, :, ::-1])
+        key = cv2.waitKey(0)
+        if key == ord('q'):
+            cv2.destroyAllWindows()
+            break'''
 
-print('PROCESSED IMAGES', idx)
+    print('PROCESSED IMAGES', idx)
 
-filepath = working_dir.strip('detectron2') + 'dataset/unripe.json'
-with open(filepath, 'w') as f:
-    json.dump(unann, f)
+    if save:
+        filepath = working_dir.strip('detectron2') + 'dataset/unripe.json'
+        with open(filepath, 'w') as f:
+            json.dump(unann, f)
+
+    return unann
 
 
+test_detectron2(img_dir, save=True)

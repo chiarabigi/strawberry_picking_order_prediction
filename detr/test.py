@@ -22,10 +22,9 @@ from detr.datasets.face import make_face_transforms
 import matplotlib.pyplot as plt
 import time
 
-import json
 
-from data_scripts.detr_to_gnnann import ann_to_gnnann
-
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+base_path = os.path.dirname(os.path.abspath(__file__))
 
 def box_cxcywh_to_xyxy(x):
     x_c, y_c, w, h = x.unbind(1)
@@ -123,11 +122,10 @@ def get_args_parser():
     parser.add_argument('--data_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
 
-    parser.add_argument('--output_dir', default='/home/chiara/SCHEDULING/detr_experiments/detr_test_results/imgs',
-                        help='path where to save the results, empty for no saving')
+    parser.add_argument('--output_dir', help='path where to save the results, empty for no saving')
     parser.add_argument('--device', default='cpu',
                         help='device to use for training / testing')
-    parser.add_argument('--resume', default='/home/chiara/strawberry_picking_order_prediction/detr/checkpoints/checkpoint.pth',
+    parser.add_argument('--resume', default=base_path + '/checkpoints/checkpoint_detr.pth',
                         help='resume from checkpoint')
 
     parser.add_argument('--thresh', default=0.5, type=float)
@@ -258,21 +256,10 @@ def infer(images_path, model, postprocessors, device, args):
 
         print("Processing...{} ({:.3f}s)".format(filename, infer_time))
 
-    gnnann = ann_to_gnnann(for_gnn)
-    save_path = images_path[0].strip(images_path[0].split('/')[-1])
-    save_path_folder = save_path + 'raw'
-    if not os.path.exists(save_path_folder):
-        os.makedirs(save_path_folder)
-
-    save_path_json = save_path_folder + '/gnnann.json'
-    with open(save_path_json, "w") as f:
-        json_str = json.dumps(gnnann)
-        f.write(json_str)
-
     avg_duration = duration / len(images_path)
     print("Avg. Time: {:.3f}s".format(avg_duration))
 
-    return save_path
+    return for_gnn
 
 
 def test_detr(coco_path):

@@ -1,9 +1,10 @@
 import os
+import json
 import torch
 import random
 import numpy as np
 from PIL import Image
-from utils.utils import get_info, get_dist_score, get_occ_score, update_occ, heuristic_sched
+from utils.utils import get_info, get_dist_score, get_occ_score, update_occ, heuristic_sched, true_unripe
 from utils.edges import min_str_dist
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
@@ -11,7 +12,10 @@ device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 base_path = os.path.dirname(os.path.abspath(__file__)).strip('data_scripts')
 
 
-def ann_to_gnnann(images):
+def ann_to_gnnann(images, unripe, images_path):
+    unripe_annT = unripe  # list of dictionaries
+    unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}  # dictionary of lists
+
     gnnann = []  # where to store each graph information
 
     for img in images:
@@ -20,8 +24,18 @@ def ann_to_gnnann(images):
         # from the list with all the annotations, extract just the ones of the image in consideratio
         ripe = img['annotations']['bbox']
         occ = img['annotations']['occlusion']
+        tot_unripe = [unripe_ann['bboxes'][x] for x in range(len(unripe_ann['bboxes']))
+                      if unripe_ann['file_name'][x] == filename]  # [0]
 
+        if len(tot_unripe) > 0:
+            unripe = true_unripe(tot_unripe, ripe)
+            occ.extend([3] * len(unripe))
+            unripe_info = get_info(unripe, occ)
+        else:
+            unripe_info = []
+            unripe = []
         ripe_info = get_info(ripe, occ)
+        ripe_info.extend(unripe_info)
 
         min_dist = min_str_dist(ripe_info, True)['min_dist']
 
@@ -38,7 +52,7 @@ def ann_to_gnnann(images):
         # EASINESS SCORE
         dist_score = get_dist_score(min_dist)
         occ_sc = get_occ_score(ripe_info)
-        ripeness = [1] * len(ripe)
+        ripeness = [1] * len(ripe) + [0] * len(unripe)
         easiness = [dist_score[e] * occ_sc[e] + 0.11467494382197191 for e in range(len(dist_score))]
 
         # scheduling from easiness score: first to pick has highest score, and so on
@@ -67,6 +81,7 @@ def ann_to_gnnann(images):
 
         # save bbox coordinate information to use as node features
         boxes = ripe
+        boxes.extend(unripe)
 
         # shuffle! Some students annotation are ordered, you don't want the model to learn first to pick = node number 1
         order = np.arange(0, len(coord))
@@ -110,4 +125,13 @@ def ann_to_gnnann(images):
             'easiness_prob': easiness_prob
         })
 
-    return gnnann
+    save_path = images_path.strip(images_path.split('/')[-1])
+    save_path_folder = save_path + 'raw'
+    if not os.path.exists(save_path_folder):
+        os.makedirs(save_path_folder)
+
+    save_path_json = save_path_folder + '/gnnann.json'
+    with open(save_path_json, "w") as f:
+        json_str = json.dumps(gnnann)
+        f.write(json_str)
+    return save_path

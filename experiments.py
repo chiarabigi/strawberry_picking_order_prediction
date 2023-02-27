@@ -17,36 +17,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import os
+# from detectron2.inference_dyson_keypoints import test_detectron2
+from data_scripts.detr_to_gnnann import ann_to_gnnann
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 base_path = os.path.dirname(os.path.abspath(__file__))
-
-
-
-def experiment(image_path):
-
-    # obtain file with bounding boxes and occlusion properties from raw image
-    json_annotations_path = test_detr(image_path)
-
-    # obatin data in graph representation
-    graph_data_scheduling = cfg.DATASET(json_annotations_path)
-
-    # get bbox of first strawberry to pick
-    best_GAT_scheduling_model = cfg.MODEL(cfg.HL, cfg.NL).to(device)
-    best_GAT_scheduling_model.load_state_dict(
-        torch.load(base_path + 'best_models/model_20230224_132115.pth'))
-    scheduling_probability_vector = best_GAT_scheduling_model(graph_data_scheduling.get(0)).squeeze(1)
-    first = scheduling_probability_vector.argmax()
-    bbox = first_bbox(first, json_annotations_path)
-
-    # obtain original image with white patch on target strawberry
-    new_image_path = add_patch(image_path, bbox)
-
-    return new_image_path
-
-
-image_path = '/home/chiara/TRAJECTORIES/dataset_collection/dataset/strawberry_imgs/rgb_img_config0_strawberry0_traj0.png'
-target_strawberry = experiment(image_path)
 
 
 def first_bbox(first, json_path):
@@ -73,3 +48,37 @@ def add_patch(img_path, bbox):
     new_image = new_image_folder + '/' + img_path.split('/')[-1]
     plt.savefig(new_image)
     return new_image
+
+
+def experiment(image_path):
+
+    # obtain bounding boxes of unripe strawberries from raw image
+    unripe_info = [{
+            'file_name': [],
+            'bboxes': []
+        }]  # test_detectron2(image_path, save=False)
+
+    # obtain bounding boxes and occlusion properties from raw image
+    occlusion_info = test_detr(image_path)
+
+    json_annotations_path = ann_to_gnnann(occlusion_info, unripe_info, image_path)
+
+    # obatin data in graph representation
+    graph_data_scheduling = cfg.DATASET(json_annotations_path)
+
+    # get bbox of first strawberry to pick
+    best_GAT_scheduling_model = cfg.MODEL(cfg.HL, cfg.NL).to(device)
+    best_GAT_scheduling_model.load_state_dict(
+        torch.load(base_path + '/best_models/model_20230224_132115.pth'))
+    scheduling_probability_vector = best_GAT_scheduling_model(graph_data_scheduling.get(0)).squeeze(1)
+    first = scheduling_probability_vector.argmax()
+    bbox = first_bbox(first, json_annotations_path)
+
+    # obtain original image with white patch on target strawberry
+    new_image_path = add_patch(image_path, bbox)
+
+    return new_image_path
+
+
+image_path = '/home/chiara/TRAJECTORIES/dataset_collection/dataset/strawberry_imgs/rgb_img_config0_strawberry0_traj0.png'
+target_strawberry = experiment(image_path)

@@ -81,11 +81,11 @@ def get_args_parser():
     # dataset parameters
     parser.add_argument('--dataset_file', default='coco')
     parser.add_argument('--num_classes', type=int, default=5)  # `max_obj_id + 1
-    parser.add_argument('--coco_path', type=str, default='/home/chiara/datasets/coco')
+    parser.add_argument('--coco_path', type=str)
     parser.add_argument('--coco_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
 
-    parser.add_argument('--output_dir', default='/home/chiara/detr_tutorial-master/detr/checkpoints',
+    parser.add_argument('--output_dir',
                         help='path where to save, empty for no saving')
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')

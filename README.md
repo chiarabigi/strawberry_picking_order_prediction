@@ -49,9 +49,27 @@ Just clone this repo, and download the dataset if you want to train or test with
 
 ## Usage
 
+### Get bbox and occlusion properties
+
+Download DETR checkpoint from: https://drive.google.com/file/d/1fmmrY3Z-DwKdr1_M8XX5tUic_yaqKK5E/view?usp=sharing
+
+Then follow the instructions of the README inside detr folder
+
+### Get bbox and ripeness property
+
+Download Detectron2 checkpoint from: https://drive.google.com/file/d/1j62QIjH1Uq3YPmM59WrT9VnbOzYVb-EN/view?usp=sharing
+
+Go to detectron2/inference_dyson_keypoints.py and add the path to the images you want to process in the variable 'img_dir'.
+
+Then cd to the detectron2 folder and run:
+
+python inference_dyson_keypoints.py
+
+If you have troubles installing detectron2 package, check: https://detectron2.readthedocs.io/en/latest/tutorials/install.html
+
 ### EXPERIMENT: from raw image to image with white patch on target
 
-Go to experiments.py and put the path to your image in the variable 'image_path'. Then:
+Go to experiments.py and put the path to your image in the variable 'image_path'. You also need to have the detr model checkpoint downloaded. Then:
 
 python experiments.py
 
@@ -64,6 +82,10 @@ To run from terminal, cd to the workspace folder and type:
 python test.py
 
 ### Train a model
+
+To obtain annotations in COCO format from your own annotations, use data_scripts/ann_to_coco.py
+
+To obtain graph representation of images, use data_scripts/coco_to_gnnann.py
 
 Choose an approach, from the 'config.py' script. Remeber to delete the 'process' folders in the data_train/test/val folders when you are switching approach.
 
