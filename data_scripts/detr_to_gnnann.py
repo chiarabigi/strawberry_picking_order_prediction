@@ -4,7 +4,7 @@ import torch
 import random
 import numpy as np
 from PIL import Image
-from utils.utils import get_info, get_dist_score, get_occ_score, update_occ, heuristic_sched, true_unripe
+from utils.utils import get_info, get_dist_score, get_occ_score, update_occ, heuristic_sched, true_unripe, get_patches
 from utils.edges import min_str_dist
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
@@ -102,8 +102,8 @@ def ann_to_gnnann(images, unripe, images_path):
         heu_prob = [heu_prob[h] for h in order]
 
         # patches (not now, first let's obtain a good model without it)
-        # d = Image.open(img_path +  filename)
-        patches = []  # get_patches(xy, d)
+        d = Image.open(images_path)
+        patches = get_patches(xy, d)
 
         gnnann.append({
             'img_ann': coord,

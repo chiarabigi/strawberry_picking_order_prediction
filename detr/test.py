@@ -245,8 +245,8 @@ def infer(images_path, model, postprocessors, device, args):
         single_graph['annotations'] = annot_elem
         plt.axis('off')
         #plt.show()
-        img_save_path = os.path.join(output_path, filename)
-        plt.savefig(img_save_path)
+        #img_save_path = os.path.join(output_path, filename)
+        #plt.savefig(img_save_path)
         #cv2.imwrite(img_save_path, img)
         #cv2.imshow("img", img)
         #cv2.waitKey()

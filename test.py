@@ -16,13 +16,13 @@ device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 
-test_path = base_path + '/dataset/data_test/'
+test_path = '/home/chiara/GNNpatches/data_test'  # base_path + '/dataset/data_test/'
 test_dataset = cfg.DATASET(test_path)
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
 
 model = cfg.MODEL(cfg.HL, cfg.NL).to(device)
-model_path = base_path + '/best_models/model_20230224_132115.pth'
-model.load_state_dict(torch.load(model_path))
+model_path = base_path + '/best_models/model_patches.pth'
+model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
 
 sched_easiness = np.zeros((32, 32))
