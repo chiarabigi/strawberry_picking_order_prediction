@@ -135,3 +135,73 @@ def ann_to_gnnann(images, unripe, images_path):
         json_str = json.dumps(gnnann)
         f.write(json_str)
     return save_path
+
+def old_ann_to_gnnann(images, images_path):
+    gnnann = []  # where to store each graph information
+
+    for img in images:
+        filename = img['file_name']
+
+        # from the list with all the annotations, extract just the ones of the image in consideratio
+        ripe = img['annotations']['bbox']
+        occ = img['annotations']['occlusion']
+        ripe_info = get_info(ripe, occ)
+
+        min_dist = min_str_dist(ripe_info, True)['min_dist']
+
+        ripe_infoT = {k: [dic[k] for dic in ripe_info] for k in ripe_info[0]}
+        # save x,y coordinates of the center to later extract patches of images around those
+        xy = list(map(list, zip(*[[int(x) for x in ripe_infoT['xc']], [int(y) for y in ripe_infoT['yc']]])))
+
+        # save coordinates of x,y min to use as node features
+        coordT = [ripe_infoT['xmin'], ripe_infoT['ymin']]
+        coord = [[coordT[0][i], coordT[1][i]] for i in range(len(coordT[0]))]
+        # save percentage of berry occlusion to use as node feature
+        occ_score = ripe_infoT['occlusion_by_berry%']
+
+        # EASINESS SCORE
+        dist_score = get_dist_score(min_dist)
+        occ_sc = get_occ_score(ripe_info)
+        ripeness = [1] * len(ripe)
+        easiness = [dist_score[e] * occ_sc[e] + 0.11467494382197191 for e in range(len(dist_score))]
+
+        # scheduling from easiness score: first to pick has highest score, and so on
+        scheduling_easiness = sorted(range(len(easiness)), reverse=True, key=lambda k: easiness[k])
+        scheduling_easiness = [x + 1 for x in scheduling_easiness]
+
+        # previous occlusion options:
+        # 'occluded by leaf', 'occluding', 'occluded by leaf/occluding', 'non occluded', 'occluded by berry'
+        # updated occlusion options: 'non occluded', 'occluded by leaf', 'occluded by berry'
+        occ_ann = update_occ(ripe_info)
+        # get binary information of occlusion by leaf
+        occ_leaf = [1] * len(occ_ann)
+        for x in range(len(occ_ann)):
+            if occ_ann[x] != 1:
+                occ_leaf[x] = 0
+
+        # save bbox coordinate information to use as node features
+        boxes = ripe
+
+        # patches (not now, first let's obtain a good model without it)
+        # d = Image.open(images_path)
+        # patches = get_patches(xy, d)
+
+        gnnann.append({
+            'img_ann': ripe,
+            'sc_ann': scheduling_easiness,
+            'occ_ann': occ_ann,
+            'easiness': easiness
+            # 'patches': anns[g]['patches'],
+            # 'unripe': unripe_ann
+        })
+
+    save_path = images_path.strip(images_path.split('/')[-1])
+    save_path_folder = save_path + 'raw'
+    if not os.path.exists(save_path_folder):
+        os.makedirs(save_path_folder)
+
+    save_path_json = save_path_folder + '/gnnann.json'
+    with open(save_path_json, "w") as f:
+        json_str = json.dumps(gnnann)
+        f.write(json_str)
+    return save_path

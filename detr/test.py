@@ -1,6 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 """
 Train and eval functions used in main.py
+
+IT SAVES INFO FOR THE SCHEDULING EXPERIMENT!!
 """
 import math
 import os
