@@ -6,6 +6,7 @@ Go to config.py to choose correctly the name of the approach used to train the m
 import numpy as np
 import torch
 from torch_geometric.loader import DataLoader
+import json
 import os
 import matplotlib.pyplot as plt
 from collections import Counter
@@ -16,12 +17,16 @@ device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 
-test_path = '/home/chiara/GNNpatches/data_test'  # base_path + '/dataset/data_test/'
+with open(base_path + '/dataset/data_test/raw/gnnann.json') as f:
+    annT = json.load(f)
+ann = {k: [dic[k] for dic in annT] for k in annT[0]}
+
+test_path = base_path + '/dataset/data_test/'
 test_dataset = cfg.DATASET(test_path)
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
 
 model = cfg.MODEL(cfg.HL, cfg.NL).to(device)
-model_path = base_path + '/best_models/model_patches.pth'
+model_path = base_path + '/best_models/model_20230228_152337.pth'
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
 
@@ -38,8 +43,9 @@ for i, tbatch in enumerate(test_loader):
         gt += tbatch.y.tolist()
         y += pred.tolist()
     else:
-        sched_easiness, sched_students, sched_heuristic, occ_1 = get_comparison(pred, tbatch, sched_easiness,
-                                                                                sched_students, sched_heuristic, occ_1)
+        sched_easiness, sched_students, sched_heuristic, occ_1 = \
+            get_comparison(pred, tbatch.batch, ann['occ_ann'], ann['easiness_sc_ann'], ann['heuristic_sc_ann'],
+                       ann['students_sc_ann'], sched_easiness, sched_students, sched_heuristic, occ_1)
 
 if cfg.approach != 'class':
     # Print matches

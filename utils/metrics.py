@@ -9,9 +9,9 @@ from collections import Counter
 base_path = os.path.dirname(os.path.abspath(__file__))
 
 
-def get_comparison(pred, batch, sched_easiness, sched_students, sched_heuristic, occ_1):
+def get_comparison(pred, batch_batch, batch_info, batch_easiness_ann, batch_heuristic_ann, batch_students_ann, sched_easiness, sched_students, sched_heuristic, occ_1):
     sx = 0
-    batch_size = int(batch.batch[-1]) + 1
+    batch_size = int(batch_batch[-1]) + 1
 
     guessed_easiness = 0
     guessed_heuristic = 0
@@ -20,16 +20,18 @@ def get_comparison(pred, batch, sched_easiness, sched_students, sched_heuristic,
     sched_guessed_heuristic = [0] * 33
     sched_guessed_students = [0] * 33
     for j in range(batch_size):
-        dx = get_single_out(batch.batch, j, sx)
-        y_occ = batch.info[sx:dx].cpu().detach().numpy().transpose()[0]
-        y_ea = batch.easiness_ann[sx:dx].cpu().detach().numpy().transpose()[0]
-        y_heu = batch.heuristic_ann[sx:dx].cpu().detach().numpy().transpose()[0]
-        y_stud = batch.students_ann[sx:dx].cpu().detach().numpy().transpose()[0]
+        dx = get_single_out(batch_batch, j, sx)
+        y_occ = batch_info[j]  #[sx:dx].cpu().detach().numpy().transpose()[0]
+        y_ea = batch_easiness_ann[j]  #[sx:dx].cpu().detach().numpy().transpose()[0]
+        y_heu = batch_heuristic_ann[j]  #[sx:dx].cpu().detach().numpy().transpose()[0]
+        y_stud = batch_students_ann[j]  #[sx:dx].cpu().detach().numpy().transpose()[0]
         y_pred = pred[sx:dx].cpu().detach().numpy().transpose()[0]
         sched = sorted(range(len(y_pred)), reverse=True, key=lambda k: y_pred[k])
         sched = [x + 1 for x in sched]
 
         unripe = np.unique(y_stud).size
+        if len(y_stud) == unripe:
+            unripe += 1
 
         for k in range(len(sched)):
             sched_easiness[y_ea[k] - 1][sched[k] - 1] += 1
@@ -58,11 +60,11 @@ def get_comparison(pred, batch, sched_easiness, sched_students, sched_heuristic,
     tot_guessed_students = guessed_students / (batch_size - 1)
 
     listheuristic = sorted(
-        Counter([item for sublist in batch.heuristic_ann.tolist() for item in sublist]).most_common())
+        Counter([item for sublist in batch_heuristic_ann for item in sublist]).most_common())
     listeasiness = sorted(
-        Counter([item for sublist in batch.easiness_ann.tolist() for item in sublist]).most_common())
+        Counter([item for sublist in batch_easiness_ann for item in sublist]).most_common())
     liststudents = sorted(
-        Counter([item for sublist in batch.students_ann.tolist() for item in sublist]).most_common())
+        Counter([item for sublist in batch_students_ann for item in sublist]).most_common())
     how_guessed_heuristic = [100 * sched_guessed_heuristic[i] / listheuristic[i][1] for i in range(len(listheuristic))]
     how_guessed_easiness = [100 * sched_guessed_easiness[i] / listeasiness[i][1] for i in range(len(listeasiness))]
     how_guessed_students = [100 * sched_guessed_students[i] / liststudents[i][1] for i in range(len(liststudents))]
@@ -158,8 +160,8 @@ def plot_heatmap(matrix, y_ticks, name):
         plt.suptitle('% of predicted scheduling is actually: ' + name)
         plt.title('% of correspondence: {}'.format(diag))
         ith_correspondence = [100 * abs(sum(matrix[i]) - abs(sum(matrix[i]) - sum(matrix[:, i]))) / sum(matrix[i]) for i in range(len(matrix))]
-        print(name)
-        print(ith_correspondence)
+        #print(name)
+        #print(ith_correspondence)
     else:
         plt.title('% of occlusion property for each scheduling prediction')
 

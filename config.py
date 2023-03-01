@@ -18,6 +18,7 @@ approach = 'class'
 if approach == 'class':
     MODEL = GAT_classes
     DATASET = Scheduling01ClassDataset
+    pos_weights = torch.Tensor([(8943 / 982)])
     LOSS = torch.nn.BCELoss()
 elif approach == 'score':
     MODEL = GAT_scores

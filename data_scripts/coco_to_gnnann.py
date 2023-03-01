@@ -20,6 +20,7 @@ with open(unripe_path) as f:
     unripe_annT = json.load(f)  # list of dictionaries
 unripe_ann = {k: [dic[k] for dic in unripe_annT] for k in unripe_annT[0]}  # dictionary of lists
 
+zerone_class = []
 phases = ['train', 'val', 'test']
 for phase in phases:
     # w = Counter([])  # initialization for first iteration, if you want to have balanced easiness score values
@@ -170,6 +171,9 @@ for phase in phases:
         # d = Image.open(img_path +  filename)
         patches = []  # get_patches(xy, d)
 
+        zerone_class += [0 for x in students_scheduling if x != 1]  # tot 8943
+        zerone_class += [x for x in students_scheduling if x == 1]  # tot 982
+
         gnnann.append({
             'img_ann': coord,
             'min_dist': min_dist,
@@ -246,6 +250,6 @@ plt.title('Heuristic easiness score distribution.')
 plt.savefig(base_path + 'imgs/data_bars/barEasinessScore_traintestval.png')
 
 
-
+one = 1
 # Here are some files that produced big easiness score. Can be used for data augmentation
 # big_scores = ['424.png', '442.png', '627.png', '573.png', '2390.png', '500.png', '524.png', '790.png', '1585.png', '366.png', '1569.png', '609.png', '473.png', '204.png', '427.png', '1575.png', '1120.png', '1543.png', '279.png', '458.png', '512.png', '118.png', '586.png', '437.png', '568.png', '555.png', '402.png', '798.png', '506.png', '336.png', '1658.png', '675.png', '1508.png', '444.png', '481.png', '254.png', '1524.png', '523.png']

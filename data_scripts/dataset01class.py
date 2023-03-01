@@ -38,18 +38,20 @@ class Scheduling01ClassDataset(Dataset):
         for index in range(len(anns)):
             # Read data from `raw_path`.
             box_obj = anns[index]['boxes']
-            coord = anns[index]['img_ann']
-            min_dist = anns[index]['min_dist']
+            #coord = anns[index]['img_ann']
+            #min_dist = anns[index]['min_dist']
             patches = anns[index]['patches']
             ripeness = anns[index]['ripeness']
 
-            occ = anns[index]['occ_ann']
+            #occ = anns[index]['occ_ann']
             occ_score = anns[index]['occ_score']
             occ_leaf = anns[index]['occ_leaf']
 
             students_scheduling = anns[index]['students_sc_ann']
-            heuristic_scheduling = anns[index]['heuristic_sc_ann']
-            easiness_scheduling = anns[index]['easiness_sc_ann']
+            #heuristic_scheduling = anns[index]['heuristic_sc_ann']
+            #easiness_scheduling = anns[index]['easiness_sc_ann']
+
+            #stud_score = anns[index]['stud_score']
 
             # Get node features
             node_feats = self._get_node_features(box_obj, occ_score, ripeness, occ_leaf, patches)
@@ -63,10 +65,10 @@ class Scheduling01ClassDataset(Dataset):
                         edge_index=edge_index,
                         edge_attr=edge_feats,
                         y=y,
-                        students_ann=torch.tensor(students_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
-                        heuristic_ann=torch.tensor(heuristic_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
-                        easiness_ann=torch.tensor(easiness_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
-                        info=torch.tensor(occ, device=device).unsqueeze(1)
+                        #students_ann=torch.tensor(students_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
+                        #heuristic_ann=torch.tensor(heuristic_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
+                        #easiness_ann=torch.tensor(easiness_scheduling, dtype=torch.int32, device=device).unsqueeze(1),
+                        #info=torch.tensor(occ, device=device).unsqueeze(1)
                         )
 
             if self.pre_filter is not None and not self.pre_filter(data):
@@ -139,9 +141,7 @@ class Scheduling01ClassDataset(Dataset):
         # if we want to predict just first to be picked or not
         label = copy.copy(scheduling)
         for i in range(len(label)):
-            if label[i] == 2:
-                label[i] = 1
-            elif label[i] != 1:
+            if label[i] != 1:
                 label[i] = 0
         return torch.tensor(label, dtype=torch.float32, device=device).unsqueeze(1)
 

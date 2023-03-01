@@ -20,7 +20,7 @@ def train_one_epoch():
     running_loss = 0.0
     tot_nodes = 0.0
     step = 0
-
+    '''
     if criterion._get_name() == 'BCELoss':
         sched_easiness = np.zeros((32, 32))
         sched_students = np.zeros((32, 32))
@@ -29,7 +29,7 @@ def train_one_epoch():
     else:
         matches = []
         storeP = []
-        storeT = []
+        storeT = []'''
 
     for i, batch in enumerate(train_loader, 0):
         # zero the parameter gradients
@@ -49,7 +49,7 @@ def train_one_epoch():
         running_loss += loss.item()
         tot_nodes += len(batch.batch)
         step += 1
-        ''''''
+        '''
         if criterion._get_name() == 'BCELoss':
             sched_easiness, sched_students, sched_heuristic, occ_1 = get_comparison(outputs, batch, sched_easiness,
                                                                             sched_students, sched_heuristic, occ_1)
@@ -59,9 +59,6 @@ def train_one_epoch():
             outputsL = [round(x, 2) for x in outputs.t().tolist()[0]]
             batchyL = [round(x, 2) for x in batch.y.t().tolist()[0]]
             matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
-
-    # for loss plot
-    y_loss['train'].append(running_loss / step)
 
     if criterion._get_name() == 'BCELoss':
         plot_heatmap(sched_easiness, list(range(0, 31)), 'TRAIN heuristic easiness score scheduling')
@@ -80,8 +77,10 @@ def train_one_epoch():
 
         plt.title('Strawberry train easiness score. Orange: gt. Blue: predicted')
         plt.savefig('imgs/truetrainEasiness.png')
-        plt.close(3)
+        plt.close(3)'''
 
+    # for loss plot
+    y_loss['train'].append(running_loss / step)
     return running_loss / step
 
 
@@ -90,7 +89,7 @@ def validation():
     running_vloss = 0.0
     tot_vnodes = 0.0
     step = 0
-
+    '''
     if criterion._get_name() == 'BCELoss':
         sched_easiness = np.zeros((32, 32))
         sched_students = np.zeros((32, 32))
@@ -99,7 +98,7 @@ def validation():
     else:
         matches = []
         storeT = []
-        storeP = []
+        storeP = []'''
 
     for i, vbatch in enumerate(val_loader):
 
@@ -108,7 +107,7 @@ def validation():
         running_vloss += vloss.item()
         tot_vnodes += len(vbatch.batch)
         step += 1
-
+        '''
         if criterion._get_name() == 'BCELoss':
             sched_easiness, sched_students, sched_heuristic, occ_1 = get_comparison(voutputs, vbatch, sched_easiness,
                                                                                     sched_students, sched_heuristic,
@@ -119,9 +118,6 @@ def validation():
             outputsL = [round(x, 2) for x in voutputs.t().tolist()[0]]
             batchyL = [round(x, 2) for x in vbatch.y.t().tolist()[0]]
             matches += [outputsL[x] for x in range(len(outputsL)) if outputsL[x] == batchyL[x]]
-
-    avg_vloss = running_vloss / step
-    y_loss['val'].append(avg_vloss)
 
     if criterion._get_name() == 'BCELoss':
         plot_heatmap(sched_easiness, list(range(0, 31)), 'VAL heuristic easiness score scheduling')
@@ -142,7 +138,10 @@ def validation():
         plt.bar(wT.keys(), wT.values(), width=0.001)
         plt.title('Strawberry val easiness score. Orange: gt. Blue: predicted')
         plt.savefig('imgs/truevalEasiness.png')
-        plt.close(4)
+        plt.close(4)'''
+
+    avg_vloss = running_vloss / step
+    y_loss['val'].append(avg_vloss)
 
     return avg_vloss
 
@@ -150,7 +149,7 @@ def validation():
 def test():
     model.eval()
     tot_tnodes = 0.0
-
+    '''
     if criterion._get_name() == 'BCELoss':
         sched_easiness = np.zeros((32, 32))
         sched_students = np.zeros((32, 32))
@@ -159,12 +158,12 @@ def test():
     else:
         storeT = []
         storeP = []
-        matches = []
+        matches = []'''
 
     for i, tbatch in enumerate(test_loader):
         pred = model(tbatch)
         tot_tnodes += len(tbatch.batch)
-
+        '''
         if criterion._get_name() == 'BCELoss':
             sched_easiness, sched_students, sched_heuristic, occ_1 = get_comparison(pred, tbatch, sched_easiness,
                                                                                     sched_students, sched_heuristic,
@@ -196,7 +195,7 @@ def test():
 
         plt.title('Strawberry test easiness score. Orange: gt. Blue: predicted')
         plt.savefig('imgs/truetestEasiness.png')
-        plt.close(2)
+        plt.close(2)'''
 
 def draw_curve(current_epoch, cfg, lastEpoch, best_loss):
     if current_epoch != lastEpoch:
