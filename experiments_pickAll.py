@@ -15,7 +15,7 @@ from detr.test import test_detr
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from PIL import Image
+from PIL import Image, ImageDraw
 import os
 # from detectron2.inference_dyson_keypoints import test_detectron2
 from data_scripts.detr_to_gnnann import ann_to_gnnann
@@ -44,18 +44,22 @@ def first_bbox(idx, json_path):
 
 def add_patch(img_path, bbox, i):
     orig_image = Image.open(img_path)
-    img = np.array(orig_image)
-    plt.figure(figsize=(16, 10))
-    plt.imshow(img)
-    ax = plt.gca()
-    ax.add_patch(plt.Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3],
-                               fill=True, color='white', linewidth=3))
-    plt.axis('off')
+    draw = ImageDraw.Draw(orig_image)
+    draw.rectangle([(bbox[0], bbox[1]), (bbox[2] + bbox[0], bbox[3] + bbox[1])], outline='white', fill='white')
+    #w, h = orig_image.size
+    #img = np.array(orig_image)
+    #plt.figure(figsize=(w/100,h/100))
+    #plt.imshow(img)
+    #ax = plt.gca()
+    #ax.add_patch(plt.Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=True, color='white', linewidth=3))
+    #plt.axis('off')
     new_image_folder = img_path.strip(img_path.split('/')[-1]) + 'target'
     if not os.path.exists(new_image_folder):
         os.makedirs(new_image_folder)
     new_image = new_image_folder + '/' + str(i + 1) + '_' + img_path.split('/')[-1]
-    plt.savefig(new_image)
+    #plt.tight_layout()
+    #plt.savefig(new_image, facecolor='black')
+    orig_image.save(new_image)
     return new_image
 
 
