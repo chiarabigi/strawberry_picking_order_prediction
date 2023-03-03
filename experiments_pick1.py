@@ -44,7 +44,7 @@ def add_patch(img_path, bbox, i, new_image_folder, black_image_folder):
 
     orig_imageB = Image.open(img_path)
     drawB = ImageDraw.Draw(orig_imageB)
-    drawB.rectangle([(bbox[0], bbox[1]), (bbox[2] + bbox[0], bbox[3] + bbox[1])], outline='black', fill='black')
+    drawB.rectangle([(bbox[0], bbox[1]), (bbox[2] + bbox[0], bbox[3] + bbox[1])], outline='red', fill='red')
     black_image = black_image_folder + '/' + img_path.split('/')[-1]
     orig_imageB.save(black_image)
     return black_image
