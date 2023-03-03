@@ -35,28 +35,22 @@ def first_bbox(idx, json_path):
     return bbox
 
 
-def add_patch(img_path, bbox):
+def add_patch(img_path, bbox, i, new_image_folder, black_image_folder):
     orig_image = Image.open(img_path)
     draw = ImageDraw.Draw(orig_image)
     draw.rectangle([(bbox[0], bbox[1]), (bbox[2] + bbox[0], bbox[3] + bbox[1])], outline='white', fill='white')
-    #w, h = orig_image.size
-    #img = np.array(orig_image)
-    #plt.figure(figsize=(w/100,h/100))
-    #plt.imshow(img)
-    #ax = plt.gca()
-    #ax.add_patch(plt.Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=True, color='white', linewidth=3))
-    #plt.axis('off')
-    new_image_folder = img_path.strip(img_path.split('/')[-1]) + 'target'
-    if not os.path.exists(new_image_folder):
-        os.makedirs(new_image_folder)
-    new_image = new_image_folder + '/' + str(1) + '_' + img_path.split('/')[-1]
-    #plt.tight_layout()
-    #plt.savefig(new_image, facecolor='black')
+    new_image = new_image_folder + '/' + str(i + 1) + '_' + img_path.split('/')[-1]
     orig_image.save(new_image)
-    return new_image
+
+    orig_imageB = Image.open(img_path)
+    drawB = ImageDraw.Draw(orig_imageB)
+    drawB.rectangle([(bbox[0], bbox[1]), (bbox[2] + bbox[0], bbox[3] + bbox[1])], outline='black', fill='black')
+    black_image = black_image_folder + '/' + img_path.split('/')[-1]
+    orig_imageB.save(black_image)
+    return black_image
 
 
-def experiment(image_path):
+def experiment(image_path, exp):
 
     # obtain bounding boxes and occlusion properties from raw image
     occlusion_info = test_detr(image_path)
@@ -72,16 +66,26 @@ def experiment(image_path):
     best_GAT_scheduling_model.load_state_dict(
         torch.load(base_path + '/best_models/model_best_sched.pth', map_location=device))
     scheduling_probability_vector = best_GAT_scheduling_model(graph_data_scheduling.get(0)).squeeze(1)
+    sched = sorted(range(len(scheduling_probability_vector)), reverse=True,
+                   key=lambda k: scheduling_probability_vector[k])
 
-    # get images to pick ripe strawberries in order
-    idx = scheduling_probability_vector.argmax()
-    bbox = first_bbox(idx, json_annotations_path)
     # obtain original image with white patch on target strawberry
-    new_image_path = add_patch(image_path, bbox)
+    new_image_folder = image_path.strip(image_path.split('/')[-1]) + 'target{}'.format(exp)
+    if not os.path.exists(new_image_folder):
+        os.makedirs(new_image_folder)
+    black_image_folder = image_path.strip(image_path.split('/')[-1]) + 'target_black{}'.format(exp)
+    if not os.path.exists(black_image_folder):
+        os.makedirs(black_image_folder)
+    for i in range(len(sched)):
+        idx = sched.index(i)
+        bbox = first_bbox(idx, json_annotations_path)
+        # obtain original image with white patch on target strawberry
+        black_image_path = add_patch(image_path, bbox, i, new_image_folder, black_image_folder)
+        image_path = black_image_path
 
-    new_images_folder = image_path.strip(image_path.split('/')[-1]) + 'target'
-    return new_images_folder
+    return new_image_folder
 
 
-image_path = '/home/chiara/TRAJECTORIES/dataset_collection/dataset/strawberry_imgs/rgb_img_config0_strawberry0_traj0.png'
-target_strawberries_folder = experiment(image_path)
+exp = 1
+image_path = '/home/chiara/riseholme-experiments/pickone/{}/test{}_Color_Color.png'.format(exp, exp)
+target_strawberries_folder = experiment(image_path, exp)

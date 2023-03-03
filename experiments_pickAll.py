@@ -42,7 +42,7 @@ def first_bbox(idx, json_path):
     return bbox
 
 
-def add_patch(img_path, bbox, i):
+def add_patch(img_path, bbox, i, new_image_folder):
     orig_image = Image.open(img_path)
     draw = ImageDraw.Draw(orig_image)
     draw.rectangle([(bbox[0], bbox[1]), (bbox[2] + bbox[0], bbox[3] + bbox[1])], outline='white', fill='white')
@@ -53,9 +53,6 @@ def add_patch(img_path, bbox, i):
     #ax = plt.gca()
     #ax.add_patch(plt.Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=True, color='white', linewidth=3))
     #plt.axis('off')
-    new_image_folder = img_path.strip(img_path.split('/')[-1]) + 'target'
-    if not os.path.exists(new_image_folder):
-        os.makedirs(new_image_folder)
     new_image = new_image_folder + '/' + str(i + 1) + '_' + img_path.split('/')[-1]
     #plt.tight_layout()
     #plt.savefig(new_image, facecolor='black')
@@ -63,7 +60,7 @@ def add_patch(img_path, bbox, i):
     return new_image
 
 
-def experiment(image_path):
+def experiment(image_path, exp):
 
     # obtain bounding boxes of unripe strawberries from raw image
     unripe_info = [{
@@ -87,16 +84,20 @@ def experiment(image_path):
     sched = sorted(range(len(scheduling_probability_vector)), reverse=True, key=lambda k: scheduling_probability_vector[k])
 
     # get images to pick ripe strawberries in order
+    new_image_folder = image_path.strip(image_path.split('/')[-1]) + 'target{}'.format(exp)
+    if not os.path.exists(new_image_folder):
+        os.makedirs(new_image_folder)
+
     ripes = get_ripe(json_annotations_path)
     for i in range(ripes):
         idx = sched.index(i)
         bbox = first_bbox(idx, json_annotations_path)
         # obtain original image with white patch on target strawberry
-        new_image_path = add_patch(image_path, bbox, i)
+        new_image_path = add_patch(image_path, bbox, i, new_image_folder)
 
-    new_images_folder = image_path.strip(image_path.split('/')[-1]) + 'target'
-    return new_images_folder
+    return new_image_folder
 
 
-image_path = '/home/chiara/TRAJECTORIES/dataset_collection/dataset/strawberry_imgs/rgb_img_config0_strawberry0_traj0.png'
-target_strawberries_folder = experiment(image_path)
+exp = 1
+image_path = '/home/chiara/riseholme-experiments/pickall/{}/test{}_Color_Color.png'.format(exp, exp)
+target_strawberries_folder = experiment(image_path, exp)
