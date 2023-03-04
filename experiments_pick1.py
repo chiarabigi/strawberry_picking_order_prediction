@@ -15,8 +15,6 @@ from model import GCN_OLD_scheduling
 from data_scripts.old_dataset import SchedulingDataset
 from detr.test import test_detr
 import json
-import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 import os
 # from detectron2.inference_dyson_keypoints import test_detectron2
@@ -38,14 +36,16 @@ def first_bbox(idx, json_path):
 def add_patch(img_path, bbox, i, new_image_folder, black_image_folder):
     orig_image = Image.open(img_path)
     draw = ImageDraw.Draw(orig_image)
-    draw.rectangle([(bbox[0], bbox[1]), (bbox[2] + bbox[0], bbox[3] + bbox[1])], outline='white', fill='white')
+    draw.rectangle([(bbox[0] - 5, bbox[1] - 5), (bbox[2] + bbox[0] + 5, bbox[3] + bbox[1] + 5)], outline='white', fill='white')
     new_image = new_image_folder + '/' + str(i + 1) + '_' + img_path.split('/')[-1]
+    #orig_image.resize((1280, 720), Image.Resampling.LANCZOS)
     orig_image.save(new_image)
 
     orig_imageB = Image.open(img_path)
     drawB = ImageDraw.Draw(orig_imageB)
     drawB.rectangle([(bbox[0], bbox[1]), (bbox[2] + bbox[0], bbox[3] + bbox[1])], outline='red', fill='red')
     black_image = black_image_folder + '/' + img_path.split('/')[-1]
+    #orig_imageB.resize((1280, 720))
     orig_imageB.save(black_image)
     return black_image
 
@@ -86,6 +86,6 @@ def experiment(image_path, exp):
     return new_image_folder
 
 
-exp = 1
-image_path = '/home/chiara/riseholme-experiments/pickone/{}/test{}_Color_Color.png'.format(exp, exp)
+exp = 4
+image_path = '/home/chiara/riseholme-experiments/pickone/4/target4/9_target4_Color.png'.format(exp, exp)
 target_strawberries_folder = experiment(image_path, exp)
