@@ -18,10 +18,17 @@
 
 This repo contains the code to predict scheduling of strawberry picking starting from images of clusters of strawberries with bounding box and occlusion annotations.
 
-### Built With
+There are some *side projects*:
+
+1) Success of picking
+2) DETR for occlusion properties detection
+3) Detectron2 for ripeness detection
+
+More informations are in the READMEs of the respective folders or in the Usage section of this README.
+## Built With
 
 - **Operating system Ubuntu 10.04**
-- **Language Pytorch 3.9**
+- **Language Python 3.9**
 - **Main library Torch 1.12** 
 
 ## Getting Started
@@ -71,7 +78,13 @@ If you have troubles installing detectron2 package, check: https://detectron2.re
 
 Go to experiments.py and put the path to your image in the variable 'image_path'. You also need to have the detr model checkpoint downloaded. Then:
 
-python experiments.py
+python experiments_pickall.py
+
+if you want to use the model that outputs all the sequence of picking scheduling, or:
+
+python experiments_pick1.py
+
+if you want to use the model that works better at predicting only the first strawberry to be picked. You will have all the scheduling order, since every strawberry picked then is masked so the new image can be processed by the model.
 
 ### Test our models
 
