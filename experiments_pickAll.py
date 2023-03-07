@@ -87,6 +87,7 @@ def experiment(image_path, exp):
     return new_image_folder
 
 
-exp = 4
-image_path = '/home/chiara/riseholme-experiments/pickall/{}/target4/9_target{}_Color.png'.format(exp, exp)
+exp = 5
+# path to raw image
+image_path = '/home/chiara/riseholme-experiments/pickall/{}/target{}_Color.png'.format(exp, exp)
 target_strawberries_folder = experiment(image_path, exp)
